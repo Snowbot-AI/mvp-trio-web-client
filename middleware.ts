@@ -1,22 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
-import jwt from 'jsonwebtoken';
 
 export function middleware(req: NextRequest) {
-  const token = req.cookies.get('auth')?.value;
+  const token = req.headers.get('trio_auth');
 
-  if (!token) {
-    return new NextResponse('⛔ Authorization Required', { status: 401 });
+  if (!token || token !== "UURNUzYkeVJuSlR5P0BwYWFwZ2ZxU3BwQWhoUiZiQkJTcmFoWEpFVA==") {
+    return new NextResponse('⛔ Authorization Required ', { status: 401 });
   }
 
-  try {
-    jwt.verify(token, process.env.JWT_SECRET!);
-    return NextResponse.next();
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  } catch (e) {
-    return new NextResponse('⛔ Authorization Required', { status: 401 });
-  }
+  return NextResponse.next();
 }
 
 export const config = {
-  matcher: ['/((?!_next|favicon.ico|.*\\.css$|.*\\.js$).*)'],
+  matcher: ['/((?!_next|favicon.ico|api/auth|.*\\.css$|.*\\.js$).*)'],
 };
