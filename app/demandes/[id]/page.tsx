@@ -3,7 +3,7 @@
 import type React from "react"
 
 import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
+import { useParams, useRouter } from "next/navigation"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -244,8 +244,12 @@ const formatTailleFichier = (taille: number) => {
   return `${(taille / (1024 * 1024)).toFixed(1)} MB`
 }
 
-export default function DetailDemande({ params }: { params: { id: string } }) {
+export default function DetailDemande() {
   const router = useRouter()
+  
+  const params = useParams<{ id: string }>()
+
+ 
   const [demande, setDemande] = useState<Demande | null>(null)
   const [modeEdition, setModeEdition] = useState(false)
   const [demandeModifiee, setDemandeModifiee] = useState<Demande | null>(null)
