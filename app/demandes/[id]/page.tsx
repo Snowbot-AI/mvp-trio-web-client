@@ -283,7 +283,7 @@ export default function DetailDemande({ params }: { params: { id: string } }) {
     }
   }
 
-  const gererChangementChamp = (champ: keyof Demande, valeur: any) => {
+  const gererChangementChamp = (champ: keyof Demande, valeur: string) => {
     if (demandeModifiee) {
       setDemandeModifiee({
         ...demandeModifiee,
@@ -358,7 +358,7 @@ export default function DetailDemande({ params }: { params: { id: string } }) {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Demande non trouvée</h2>
-          <p className="text-gray-600 mb-4">La demande avec l'ID {params.id} n'existe pas.</p>
+          <p className="text-gray-600 mb-4">La demande avec l&aposID {params.id} n&aposexiste pas.</p>
           <Button onClick={() => router.push("/")}>
             <ArrowLeft className="h-4 w-4 mr-2" />
             Retour à la liste
@@ -434,14 +434,14 @@ export default function DetailDemande({ params }: { params: { id: string } }) {
                       <AlertDialogHeader>
                         <AlertDialogTitle>Approuver la demande</AlertDialogTitle>
                         <AlertDialogDescription>
-                          Êtes-vous sûr de vouloir approuver cette demande d'achat ? Cette action ne peut pas être
+                          Êtes-vous sûr de vouloir approuver cette demande d&aposachat ? Cette action ne peut pas être
                           annulée.
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
                         <AlertDialogCancel>Annuler</AlertDialogCancel>
                         <AlertDialogAction onClick={() => gererChangementStatut("approuve")}>
-                          Confirmer l'approbation
+                          Confirmer l&aposapprobation
                         </AlertDialogAction>
                       </AlertDialogFooter>
                     </AlertDialogContent>
@@ -458,7 +458,7 @@ export default function DetailDemande({ params }: { params: { id: string } }) {
                       <AlertDialogHeader>
                         <AlertDialogTitle>Rejeter la demande</AlertDialogTitle>
                         <AlertDialogDescription>
-                          Êtes-vous sûr de vouloir rejeter cette demande d'achat ? Cette action ne peut pas être
+                          Êtes-vous sûr de vouloir rejeter cette demande d&aposachat ? Cette action ne peut pas être
                           annulée.
                         </AlertDialogDescription>
                       </AlertDialogHeader>

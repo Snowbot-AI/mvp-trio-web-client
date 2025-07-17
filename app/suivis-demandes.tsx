@@ -46,7 +46,7 @@ const demandesExemples: Demande[] = [
     priorite: "moyenne",
     datesoumission: "2024-01-15",
     description:
-      "Fournitures de bureau trimestrielles incluant papier, stylos, carnets et cartouches d'imprimante pour l'équipe marketing.",
+      "Fournitures de bureau trimestrielles incluant papier, stylos, carnets et cartouches d&aposimprimante pour l&aposéquipe marketing.",
     categorie: "Fournitures de bureau",
   },
   {
@@ -148,7 +148,7 @@ const getLibelleStatut = (statut: string) => {
     case "rejete":
       return "Rejeté"
     case "en-cours-examen":
-      return "En cours d'examen"
+      return "En cours d&aposexamen"
     default:
       return statut
   }
@@ -174,7 +174,7 @@ export default function SuiviDemandes() {
   const [termeRecherche, setTermeRecherche] = useState("")
   const [filtreStatut, setFiltreStatut] = useState("tous")
   const [filtreDepartement, setFiltreDepartement] = useState("tous")
-  const [demandeSelectionnee, setDemandeSelectionnee] = useState<Demande | null>(null)
+  const [, setDemandeSelectionnee] = useState<Demande | null>(null)
 
   const [formulaireOuvert, setFormulaireOuvert] = useState(false)
   const [nouvelleDemande, setNouvelleDemande] = useState({
@@ -222,7 +222,7 @@ export default function SuiviDemandes() {
     const demande: Demande = {
       id: nouvelId,
       titre: nouvelleDemande.titre,
-      demandeur: "Utilisateur Actuel", // En réalité, cela viendrait de l'authentification
+      demandeur: "Utilisateur Actuel", // En réalité, cela viendrait de l&aposauthentification
       departement: nouvelleDemande.departement,
       montant: Number.parseFloat(nouvelleDemande.montant),
       statut: "en-attente",
@@ -262,8 +262,8 @@ export default function SuiviDemandes() {
         {/* En-tête */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Suivi des Demandes d'Achat</h1>
-            <p className="text-gray-600 mt-1">Gérer et suivre les demandes d'achat</p>
+            <h1 className="text-3xl font-bold text-gray-900">Suivi des Demandes d&aposAchat</h1>
+            <p className="text-gray-600 mt-1">Gérer et suivre les demandes d&aposachat</p>
           </div>
           <Dialog open={formulaireOuvert} onOpenChange={setFormulaireOuvert}>
             <DialogTrigger asChild>
@@ -274,9 +274,9 @@ export default function SuiviDemandes() {
             </DialogTrigger>
             <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
-                <DialogTitle>Créer une nouvelle demande d'achat</DialogTitle>
+                <DialogTitle>Créer une nouvelle demande d&aposachat</DialogTitle>
                 <DialogDescription>
-                  Remplissez les informations ci-dessous pour soumettre votre demande d'achat
+                  Remplissez les informations ci-dessous pour soumettre votre demande d&aposachat
                 </DialogDescription>
               </DialogHeader>
               <form onSubmit={gererSoumissionFormulaire} className="space-y-4">
@@ -391,7 +391,7 @@ export default function SuiviDemandes() {
                       id="description"
                       value={nouvelleDemande.description}
                       onChange={(e) => gererChangementChamp("description", e.target.value)}
-                      placeholder="Décrivez en détail votre demande d'achat, incluant les spécifications, quantités, et justifications..."
+                      placeholder="Décrivez en détail votre demande d&aposachat, incluant les spécifications, quantités, et justifications..."
                       required
                       rows={4}
                       className="mt-1"
@@ -491,7 +491,7 @@ export default function SuiviDemandes() {
                 <SelectContent>
                   <SelectItem value="tous">Tous les statuts</SelectItem>
                   <SelectItem value="en-attente">En attente</SelectItem>
-                  <SelectItem value="en-cours-examen">En cours d'examen</SelectItem>
+                  <SelectItem value="en-cours-examen">En cours d&aposexamen</SelectItem>
                   <SelectItem value="approuve">Approuvé</SelectItem>
                   <SelectItem value="rejete">Rejeté</SelectItem>
                 </SelectContent>
@@ -516,7 +516,7 @@ export default function SuiviDemandes() {
         <Card>
           <CardHeader>
             <CardTitle>Demandes ({demandesFiltrees.length})</CardTitle>
-            <CardDescription>Gérer et suivre toutes les demandes d'achat</CardDescription>
+            <CardDescription>Gérer et suivre toutes les demandes d&aposachat</CardDescription>
           </CardHeader>
           <CardContent>
             <Table>
