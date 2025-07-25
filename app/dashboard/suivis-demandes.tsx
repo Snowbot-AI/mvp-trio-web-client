@@ -35,70 +35,7 @@ interface Demande {
   categorie: string
 }
 
-const demandesExemples: Demande[] = [
-  {
-    id: "DEM-001",
-    titre: "Fournitures de bureau - T1",
-    demandeur: "Sarah Dubois",
-    departement: "Marketing",
-    montant: 1250.0,
-    statut: "en-attente",
-    priorite: "moyenne",
-    datesoumission: "2024-01-15",
-    description:
-      "Fournitures de bureau trimestrielles incluant papier, stylos, carnets et cartouches d&aposimprimante pour l&aposéquipe marketing.",
-    categorie: "Fournitures de bureau",
-  },
-  {
-    id: "DEM-002",
-    titre: "Licences logicielles",
-    demandeur: "Michel Chen",
-    departement: "Informatique",
-    montant: 5000.0,
-    statut: "approuve",
-    priorite: "elevee",
-    datesoumission: "2024-01-14",
-    description: "Licences logicielles annuelles pour les outils de conception et logiciels de gestion de projet.",
-    categorie: "Logiciel",
-  },
-  {
-    id: "DEM-003",
-    titre: "Voyage conférence",
-    demandeur: "Émilie Martin",
-    departement: "Ventes",
-    montant: 3200.0,
-    statut: "en-cours-examen",
-    priorite: "moyenne",
-    datesoumission: "2024-01-13",
-    description: "Frais de voyage pour assister à la conférence annuelle des ventes à Lyon.",
-    categorie: "Voyage",
-  },
-  {
-    id: "DEM-004",
-    titre: "Mise à niveau équipement",
-    demandeur: "David Wilson",
-    departement: "Ingénierie",
-    montant: 8500.0,
-    statut: "rejete",
-    priorite: "faible",
-    datesoumission: "2024-01-12",
-    description: "Mise à niveau des postes de travail de développement avec nouveaux écrans et matériel.",
-    categorie: "Équipement",
-  },
-  {
-    id: "DEM-005",
-    titre: "Campagne marketing",
-    demandeur: "Lisa Bernard",
-    departement: "Marketing",
-    montant: 15000.0,
-    statut: "en-attente",
-    priorite: "urgente",
-    datesoumission: "2024-01-11",
-    description:
-      "Budget pour la campagne marketing numérique T2 incluant publicités réseaux sociaux et création de contenu.",
-    categorie: "Marketing",
-  },
-]
+const demandesExemples: Demande[] = []
 
 const getIconeStatut = (statut: string) => {
   switch (statut) {

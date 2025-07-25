@@ -43,228 +43,32 @@ import {
   Trash2,
   Plus,
 } from "lucide-react"
+import type { Demande, StatusDemande } from "../types"
+import { mockDemande } from "../mockDemande"
+import {
+  getIconeStatut,
+  getCouleurStatut,
+  getCouleurPriorite,
+  getLibelleStatut,
+  getLibellePriorite,
+  formatTailleFichier,
+  setNestedField
+} from "../utils"
 
-interface ArticleDemande {
-  id: string
-  service: string
-  type: string
-  giger: string
-  invest: string
-  fonct: string
-  designation: string
-  quantite: number
-  prixUnitaire: number
-  montant: number
-}
-
-interface PieceJointe {
-  id: string
-  nom: string
-  taille: number
-  type: string
-  url: string
-}
-
-interface Demande {
-  id: string
-  titre: string
-  demandeur: string
-  departement: string
-  statut: "en-attente" | "approuve" | "rejete" | "en-cours-examen"
-  priorite: "faible" | "moyenne" | "elevee" | "urgente"
-  datesoumission: string
-  dateLivraisonSouhaitee: string
-  description: string
-  categorie: string
-
-  // Informations fournisseur
-  fournisseur: string
-  adresseFournisseur: string
-  telFournisseur: string
-  emailFournisseur: string
-
-  // Adresse de livraison
-  adresseLivraison: string
-  telContactLivraison: string
-
-  // Articles
-  articles: ArticleDemande[]
-
-  // Totaux
-  totalCommandeHT: number
-  participationLivraison: number
-  fraisFacturation: number
-  totalHT: number
-
-  // Validation et commentaires
-  commentaire: string
-  signatureDemandeur: boolean
-  validationResponsable: boolean
-
-  // Pièces jointes
-  piecesJointes: PieceJointe[]
-}
-
-// Simulation des données étendues
-// const demandesExemples: Demande[] = [
-//   {
-//     id: "DEM-001",
-//     titre: "Fournitures de bureau - T1",
-//     demandeur: "Sarah Dubois",
-//     departement: "Marketing",
-//     statut: "en-attente",
-//     priorite: "moyenne",
-//     datesoumission: "2024-01-15",
-//     dateLivraisonSouhaitee: "2024-02-01",
-//     description: "Fournitures de bureau trimestrielles",
-//     categorie: "Fournitures de bureau",
-//     fournisseur: "Bureau Vallée",
-//     adresseFournisseur: "123 Rue du Commerce, 66000 Perpignan",
-//     telFournisseur: "04 68 12 34 56",
-//     emailFournisseur: "contact@bureau-vallee.fr",
-//     adresseLivraison: "Formiguères - Station La Calmazeille, 66210 FORMIGUERES",
-//     telContactLivraison: "04 68 04 47 35",
-//     articles: [
-//       {
-//         id: "1",
-//         service: "Marketing",
-//         type: "B",
-//         giger: "MAR001",
-//         invest: "Non",
-//         fonct: "ADM",
-//         designation: "Papier A4 80g - Ramette 500 feuilles",
-//         quantite: 10,
-//         prixUnitaire: 4.5,
-//         montant: 45.0,
-//       },
-//       {
-//         id: "2",
-//         service: "Marketing",
-//         type: "B",
-//         giger: "MAR002",
-//         invest: "Non",
-//         fonct: "ADM",
-//         designation: "Stylos bille bleu - Lot de 10",
-//         quantite: 5,
-//         prixUnitaire: 8.9,
-//         montant: 44.5,
-//       },
-//     ],
-//     totalCommandeHT: 89.5,
-//     participationLivraison: 15.0,
-//     fraisFacturation: 2.5,
-//     totalHT: 107.0,
-//     commentaire: "Livraison urgente pour début de trimestre",
-//     signatureDemandeur: true,
-//     validationResponsable: false,
-//     piecesJointes: [
-//       {
-//         id: "1",
-//         nom: "devis-bureau-vallee.pdf",
-//         taille: 245760,
-//         type: "application/pdf",
-//         url: "/placeholder-document.pdf",
-//       },
-//     ],
-//   },
-// ]
-
-const demandesExemples: Demande[] = []
-
-const getIconeStatut = (statut: string) => {
-  switch (statut) {
-    case "approuve":
-      return <CheckCircle className="h-5 w-5 text-green-600" />
-    case "rejete":
-      return <XCircle className="h-5 w-5 text-red-600" />
-    case "en-cours-examen":
-      return <Clock className="h-5 w-5 text-blue-600" />
-    default:
-      return <AlertCircle className="h-5 w-5 text-yellow-600" />
-  }
-}
-
-const getCouleurStatut = (statut: string) => {
-  switch (statut) {
-    case "approuve":
-      return "bg-green-100 text-green-800 border-green-200"
-    case "rejete":
-      return "bg-red-100 text-red-800 border-red-200"
-    case "en-cours-examen":
-      return "bg-blue-100 text-blue-800 border-blue-200"
-    default:
-      return "bg-yellow-100 text-yellow-800 border-yellow-200"
-  }
-}
-
-const getCouleurPriorite = (priorite: string) => {
-  switch (priorite) {
-    case "urgente":
-      return "bg-red-100 text-red-800 border-red-200"
-    case "elevee":
-      return "bg-orange-100 text-orange-800 border-orange-200"
-    case "moyenne":
-      return "bg-blue-100 text-blue-800 border-blue-200"
-    default:
-      return "bg-gray-100 text-gray-800 border-gray-200"
-  }
-}
-
-const getLibelleStatut = (statut: string) => {
-  switch (statut) {
-    case "en-attente":
-      return "En attente"
-    case "approuve":
-      return "Approuvé"
-    case "rejete":
-      return "Rejeté"
-    case "en-cours-examen":
-      return "En cours d'examen"
-    default:
-      return statut
-  }
-}
-
-const getLibellePriorite = (priorite: string) => {
-  switch (priorite) {
-    case "faible":
-      return "Faible"
-    case "moyenne":
-      return "Moyenne"
-    case "elevee":
-      return "Élevée"
-    case "urgente":
-      return "Urgente"
-    default:
-      return priorite
-  }
-}
-
-const formatTailleFichier = (taille: number) => {
-  if (taille < 1024) return `${taille} B`
-  if (taille < 1024 * 1024) return `${(taille / 1024).toFixed(1)} KB`
-  return `${(taille / (1024 * 1024)).toFixed(1)} MB`
-}
 
 export default function DetailDemande() {
   const router = useRouter()
   
   const params = useParams<{ id: string }>()
 
- 
-  const [demande, setDemande] = useState<Demande | null>(null)
+  const isValidId = params.id === "64e8f31d1234567890abcdef"
+  const [demande, setDemande] = useState<Demande | null>(isValidId ? mockDemande : null)
   const [modeEdition, setModeEdition] = useState(false)
-  const [demandeModifiee, setDemandeModifiee] = useState<Demande | null>(null)
-  const [nouvelArticle, setNouvelArticle] = useState<Partial<ArticleDemande>>({})
+  const [demandeModifiee, setDemandeModifiee] = useState<Demande | null>(isValidId ? mockDemande : null)
+  const [nouvelArticle, setNouvelArticle] = useState<Partial<Demande["items"][0]> | null>(null)
   const [ajoutArticle, setAjoutArticle] = useState(false)
 
-  useEffect(() => {
-    const demandeFound = demandesExemples.find((d) => d.id === params.id)
-    if (demandeFound) {
-      setDemande(demandeFound)
-      setDemandeModifiee(demandeFound)
-    }
-  }, [params.id])
+  // On n'utilise plus l'id de l'URL, on affiche toujours le mock
 
   const gererSauvegarde = () => {
     if (demandeModifiee) {
@@ -280,9 +84,9 @@ export default function DetailDemande() {
     setAjoutArticle(false)
   }
 
-  const gererChangementStatut = (nouveauStatut: "approuve" | "rejete" | "en-cours-examen") => {
+  const gererChangementStatut = (nouveauStatut: StatusDemande) => {
     if (demande) {
-      const demandeUpdated = { ...demande, statut: nouveauStatut }
+      const demandeUpdated = { ...demande, status: nouveauStatut }
       setDemande(demandeUpdated)
       setDemandeModifiee(demandeUpdated)
       console.log("Statut changé:", nouveauStatut)
@@ -301,17 +105,18 @@ export default function DetailDemande() {
   const gererUploadFichier = (event: React.ChangeEvent<HTMLInputElement>) => {
     const fichiers = event.target.files
     if (fichiers && demandeModifiee) {
-      const nouveauxFichiers: PieceJointe[] = Array.from(fichiers).map((fichier, index) => ({
+      const nouveauxFichiers: Demande["files"]["quotations"] = Array.from(fichiers).map((fichier, index) => ({
         id: `${Date.now()}-${index}`,
-        nom: fichier.name,
-        taille: fichier.size,
-        type: fichier.type,
-        url: URL.createObjectURL(fichier),
+        name: fichier.name,
+        timestamp: new Date().toISOString(),
       }))
 
       setDemandeModifiee({
         ...demandeModifiee,
-        piecesJointes: [...demandeModifiee.piecesJointes, ...nouveauxFichiers],
+        files: {
+          ...demandeModifiee.files,
+          quotations: [...demandeModifiee.files.quotations, ...nouveauxFichiers],
+        },
       })
     }
   }
@@ -320,51 +125,57 @@ export default function DetailDemande() {
     if (demandeModifiee) {
       setDemandeModifiee({
         ...demandeModifiee,
-        piecesJointes: demandeModifiee.piecesJointes.filter((f) => f.id !== idFichier),
+        files: {
+          ...demandeModifiee.files,
+          quotations: demandeModifiee.files.quotations.filter((f) => f.id !== idFichier),
+        },
       })
     }
   }
 
   const ajouterArticle = () => {
-    if (demandeModifiee && nouvelArticle.designation) {
-      const article: ArticleDemande = {
-        id: Date.now().toString(),
+    if (demandeModifiee && nouvelArticle) {
+      const article: Demande["items"][0] = {
+        description: nouvelArticle.description || "",
         service: nouvelArticle.service || "",
-        type: nouvelArticle.type || "B",
-        giger: nouvelArticle.giger || "",
-        invest: nouvelArticle.invest || "Non",
-        fonct: nouvelArticle.fonct || "",
-        designation: nouvelArticle.designation,
-        quantite: nouvelArticle.quantite || 1,
-        prixUnitaire: nouvelArticle.prixUnitaire || 0,
-        montant: (nouvelArticle.quantite || 1) * (nouvelArticle.prixUnitaire || 0),
+        budgetType: nouvelArticle.budgetType || "B",
+        isBudgeted: nouvelArticle.isBudgeted || false,
+        budgetIds: nouvelArticle.budgetIds || undefined,
+        gi: nouvelArticle.gi || false,
+        ger: nouvelArticle.ger || false,
+        invest: nouvelArticle.invest || false,
+        funct: nouvelArticle.funct || false,
+        referenceDevis: nouvelArticle.referenceDevis || undefined,
+        quantity: nouvelArticle.quantity || 1,
+        unitPrice: nouvelArticle.unitPrice || 0,
+        price: (nouvelArticle.quantity || 1) * (nouvelArticle.unitPrice || 0),
       }
 
       setDemandeModifiee({
         ...demandeModifiee,
-        articles: [...demandeModifiee.articles, article],
+        items: [...demandeModifiee.items, article],
       })
 
-      setNouvelArticle({})
+      setNouvelArticle(null)
       setAjoutArticle(false)
     }
   }
 
-  const supprimerArticle = (idArticle: string) => {
+  const supprimerArticle = (index: number) => {
     if (demandeModifiee) {
       setDemandeModifiee({
         ...demandeModifiee,
-        articles: demandeModifiee.articles.filter((a) => a.id !== idArticle),
+        items: demandeModifiee.items.filter((_, i) => i !== index),
       })
     }
   }
 
-  if (!demande) {
+  if (!isValidId || !demande) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Demande non trouvée</h2>
-          <p className="text-gray-600 mb-4">La demande avec l&aposID {params.id} n&aposexiste pas.</p>
+          <p className="text-gray-600 mb-4">La demande avec l'ID {params.id} n'existe pas.</p>
           <Button onClick={() => router.push("/")}>
             <ArrowLeft className="h-4 w-4 mr-2" />
             Retour à la liste
@@ -378,19 +189,15 @@ export default function DetailDemande() {
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-6xl mx-auto space-y-6">
         {/* En-tête */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-8">
           <div className="flex items-center gap-4">
             <Button variant="outline" onClick={() => router.push("/")}>
               <ArrowLeft className="h-4 w-4 mr-2" />
               Retour
             </Button>
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">Demande {demande.id}</h1>
-              <p className="text-gray-600 mt-1">TRIO PYRÉNÉES - Station de Formiguères</p>
-            </div>
           </div>
-
-          <div className="flex items-center gap-2">
+          <h1 className="text-3xl font-bold text-gray-900 text-center sm:text-left py-8">Demande {demande.name}</h1>
+          <div className="flex items-center gap-2 justify-center sm:justify-end">
             {modeEdition ? (
               <>
                 <Button variant="outline" onClick={gererAnnulation}>
@@ -411,81 +218,6 @@ export default function DetailDemande() {
           </div>
         </div>
 
-        {/* Statut et actions */}
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-2">
-                  {getIconeStatut(demande.statut)}
-                  <Badge variant="outline" className={`${getCouleurStatut(demande.statut)} text-lg px-3 py-1`}>
-                    {getLibelleStatut(demande.statut)}
-                  </Badge>
-                </div>
-                <Badge variant="outline" className={getCouleurPriorite(demande.priorite)}>
-                  Priorité {getLibellePriorite(demande.priorite)}
-                </Badge>
-              </div>
-
-              {demande.statut === "en-attente" && (
-                <div className="flex gap-2">
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button className="bg-green-600 hover:bg-green-700">
-                        <CheckCircle className="h-4 w-4 mr-2" />
-                        Approuver
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Approuver la demande</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          Êtes-vous sûr de vouloir approuver cette demande d&aposachat ? Cette action ne peut pas être
-                          annulée.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Annuler</AlertDialogCancel>
-                        <AlertDialogAction onClick={() => gererChangementStatut("approuve")}>
-                          Confirmer l&aposapprobation
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button variant="destructive">
-                        <XCircle className="h-4 w-4 mr-2" />
-                        Rejeter
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Rejeter la demande</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          Êtes-vous sûr de vouloir rejeter cette demande d&aposachat ? Cette action ne peut pas être
-                          annulée.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Annuler</AlertDialogCancel>
-                        <AlertDialogAction onClick={() => gererChangementStatut("rejete")}>
-                          Confirmer le rejet
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-
-                  <Button variant="outline" onClick={() => gererChangementStatut("en-cours-examen")}>
-                    <Clock className="h-4 w-4 mr-2" />
-                    Mettre en examen
-                  </Button>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Colonne principale */}
@@ -504,13 +236,18 @@ export default function DetailDemande() {
                     <Label className="text-sm font-medium">Titre de la demande</Label>
                     {modeEdition ? (
                       <Input
-                        value={demandeModifiee?.titre || ""}
-                        onChange={(e) => gererChangementChamp("titre", e.target.value)}
+                        value={demandeModifiee?.name || ""}
+                        onChange={(e) => gererChangementChamp("name", e.target.value)}
                         className="mt-1"
                       />
                     ) : (
-                      <p className="text-lg font-semibold mt-1">{demande.titre}</p>
+                      <p className="text-lg font-semibold mt-1">{demande.name}</p>
                     )}
+                  </div>
+
+                  <div>
+                    <Label className="text-sm font-medium">Date de la demande</Label>
+                    <p className="mt-1">{new Date(demande.date).toLocaleDateString("fr-FR")}</p>
                   </div>
 
                   <div>
@@ -518,27 +255,29 @@ export default function DetailDemande() {
                     {modeEdition ? (
                       <Input
                         type="date"
-                        value={demandeModifiee?.dateLivraisonSouhaitee || ""}
-                        onChange={(e) => gererChangementChamp("dateLivraisonSouhaitee", e.target.value)}
+                        value={demandeModifiee?.deliveryDate || ""}
+                        onChange={(e) => gererChangementChamp("deliveryDate", e.target.value)}
                         className="mt-1"
                       />
                     ) : (
-                      <p className="mt-1">{new Date(demande.dateLivraisonSouhaitee).toLocaleDateString("fr-FR")}</p>
+                      <p className="mt-1">{demande.deliveryDate ? new Date(demande.deliveryDate).toLocaleDateString("fr-FR") : "Non spécifié"}</p>
                     )}
                   </div>
                 </div>
+
+
 
                 <div>
                   <Label className="text-sm font-medium">Description</Label>
                   {modeEdition ? (
                     <Textarea
-                      value={demandeModifiee?.description || ""}
-                      onChange={(e) => gererChangementChamp("description", e.target.value)}
+                      value={demandeModifiee?.name || ""}
+                      onChange={(e) => gererChangementChamp("name", e.target.value)}
                       rows={3}
                       className="mt-1"
                     />
                   ) : (
-                    <p className="text-gray-700 mt-1">{demande.description}</p>
+                    <p className="text-gray-700 mt-1">{demande.name}</p>
                   )}
                 </div>
               </CardContent>
@@ -558,12 +297,12 @@ export default function DetailDemande() {
                     <Label className="text-sm font-medium">Nom du fournisseur</Label>
                     {modeEdition ? (
                       <Input
-                        value={demandeModifiee?.fournisseur || ""}
-                        onChange={(e) => gererChangementChamp("fournisseur", e.target.value)}
+                        value={demandeModifiee?.provider.name || ""}
+                        onChange={(e) => setDemandeModifiee(demandeModifiee ? setNestedField(demandeModifiee, "provider.name", e.target.value) : null)}
                         className="mt-1"
                       />
                     ) : (
-                      <p className="mt-1 font-medium">{demande.fournisseur}</p>
+                      <p className="mt-1 font-medium">{demande.provider.name}</p>
                     )}
                   </div>
 
@@ -571,12 +310,12 @@ export default function DetailDemande() {
                     <Label className="text-sm font-medium">Téléphone</Label>
                     {modeEdition ? (
                       <Input
-                        value={demandeModifiee?.telFournisseur || ""}
-                        onChange={(e) => gererChangementChamp("telFournisseur", e.target.value)}
+                        value={demandeModifiee?.provider.tel || ""}
+                        onChange={(e) => setDemandeModifiee(demandeModifiee ? setNestedField(demandeModifiee, "provider.tel", e.target.value) : null)}
                         className="mt-1"
                       />
                     ) : (
-                      <p className="mt-1">{demande.telFournisseur}</p>
+                      <p className="mt-1">{demande.provider.tel || "Non spécifié"}</p>
                     )}
                   </div>
                 </div>
@@ -585,13 +324,13 @@ export default function DetailDemande() {
                   <Label className="text-sm font-medium">Adresse</Label>
                   {modeEdition ? (
                     <Textarea
-                      value={demandeModifiee?.adresseFournisseur || ""}
-                      onChange={(e) => gererChangementChamp("adresseFournisseur", e.target.value)}
+                      value={demandeModifiee?.provider.address || ""}
+                      onChange={(e) => setDemandeModifiee(demandeModifiee ? setNestedField(demandeModifiee, "provider.address", e.target.value) : null)}
                       rows={2}
                       className="mt-1"
                     />
                   ) : (
-                    <p className="mt-1">{demande.adresseFournisseur}</p>
+                    <p className="mt-1">{demande.provider.address}</p>
                   )}
                 </div>
 
@@ -600,12 +339,12 @@ export default function DetailDemande() {
                   {modeEdition ? (
                     <Input
                       type="email"
-                      value={demandeModifiee?.emailFournisseur || ""}
-                      onChange={(e) => gererChangementChamp("emailFournisseur", e.target.value)}
+                      value={demandeModifiee?.provider.email || ""}
+                      onChange={(e) => setDemandeModifiee(demandeModifiee ? setNestedField(demandeModifiee, "provider.email", e.target.value) : null)}
                       className="mt-1"
                     />
                   ) : (
-                    <p className="mt-1">{demande.emailFournisseur}</p>
+                    <p className="mt-1">{demande.provider.email || "Non spécifié"}</p>
                   )}
                 </div>
               </CardContent>
@@ -641,17 +380,17 @@ export default function DetailDemande() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {demandeModifiee?.articles.map((article) => (
-                      <TableRow key={article.id}>
+                    {demandeModifiee?.items.map((article, index) => (
+                      <TableRow key={index}>
                         <TableCell>{article.service}</TableCell>
-                        <TableCell>{article.type}</TableCell>
-                        <TableCell>{article.designation}</TableCell>
-                        <TableCell>{article.quantite}</TableCell>
-                        <TableCell>{article.prixUnitaire.toFixed(2)} €</TableCell>
-                        <TableCell className="font-medium">{article.montant.toFixed(2)} €</TableCell>
+                        <TableCell>{article.budgetType}</TableCell>
+                        <TableCell>{article.description}</TableCell>
+                        <TableCell>{article.quantity}</TableCell>
+                        <TableCell>{article.unitPrice.toFixed(2)} €</TableCell>
+                        <TableCell className="font-medium">{article.price.toFixed(2)} €</TableCell>
                         {modeEdition && (
                           <TableCell>
-                            <Button size="sm" variant="destructive" onClick={() => supprimerArticle(article.id)}>
+                            <Button size="sm" variant="destructive" onClick={() => supprimerArticle(index)}>
                               <Trash2 className="h-4 w-4" />
                             </Button>
                           </TableCell>
@@ -664,14 +403,14 @@ export default function DetailDemande() {
                         <TableCell>
                           <Input
                             placeholder="Service"
-                            value={nouvelArticle.service || ""}
+                            value={nouvelArticle?.service || ""}
                             onChange={(e) => setNouvelArticle({ ...nouvelArticle, service: e.target.value })}
                           />
                         </TableCell>
                         <TableCell>
                           <Select
-                            value={nouvelArticle.type || "B"}
-                            onValueChange={(value) => setNouvelArticle({ ...nouvelArticle, type: value })}
+                            value={nouvelArticle?.budgetType || "B"}
+                            onValueChange={(value) => setNouvelArticle({ ...nouvelArticle, budgetType: value })}
                           >
                             <SelectTrigger>
                               <SelectValue />
@@ -685,16 +424,16 @@ export default function DetailDemande() {
                         <TableCell>
                           <Input
                             placeholder="Désignation"
-                            value={nouvelArticle.designation || ""}
-                            onChange={(e) => setNouvelArticle({ ...nouvelArticle, designation: e.target.value })}
+                            value={nouvelArticle?.description || ""}
+                            onChange={(e) => setNouvelArticle({ ...nouvelArticle, description: e.target.value })}
                           />
                         </TableCell>
                         <TableCell>
                           <Input
                             type="number"
                             placeholder="1"
-                            value={nouvelArticle.quantite || ""}
-                            onChange={(e) => setNouvelArticle({ ...nouvelArticle, quantite: Number(e.target.value) })}
+                            value={nouvelArticle?.quantity || ""}
+                            onChange={(e) => setNouvelArticle({ ...nouvelArticle, quantity: Number(e.target.value) })}
                           />
                         </TableCell>
                         <TableCell>
@@ -702,14 +441,14 @@ export default function DetailDemande() {
                             type="number"
                             step="0.01"
                             placeholder="0.00"
-                            value={nouvelArticle.prixUnitaire || ""}
+                            value={nouvelArticle?.unitPrice || ""}
                             onChange={(e) =>
-                              setNouvelArticle({ ...nouvelArticle, prixUnitaire: Number(e.target.value) })
+                              setNouvelArticle({ ...nouvelArticle, unitPrice: Number(e.target.value) })
                             }
                           />
                         </TableCell>
                         <TableCell>
-                          {((nouvelArticle.quantite || 0) * (nouvelArticle.prixUnitaire || 0)).toFixed(2)} €
+                          {((nouvelArticle?.quantity || 0) * (nouvelArticle?.unitPrice || 0)).toFixed(2)} €
                         </TableCell>
                         <TableCell>
                           <div className="flex gap-1">
@@ -764,13 +503,13 @@ export default function DetailDemande() {
                 )}
 
                 <div className="space-y-2">
-                  {demandeModifiee?.piecesJointes.map((fichier) => (
+                  {demandeModifiee?.files.quotations.map((fichier) => (
                     <div key={fichier.id} className="flex items-center justify-between p-3 border rounded-lg">
                       <div className="flex items-center gap-3">
                         <File className="h-5 w-5 text-gray-500" />
                         <div>
-                          <p className="font-medium">{fichier.nom}</p>
-                          <p className="text-sm text-gray-500">{formatTailleFichier(fichier.taille)}</p>
+                          <p className="font-medium">{fichier.name}</p>
+                          <p className="text-sm text-gray-500">{new Date(fichier.timestamp).toLocaleDateString("fr-FR")}</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
@@ -786,7 +525,7 @@ export default function DetailDemande() {
                     </div>
                   ))}
 
-                  {demandeModifiee?.piecesJointes.length === 0 && (
+                  {demandeModifiee?.files.quotations.length === 0 && (
                     <p className="text-gray-500 text-center py-4">Aucune pièce jointe</p>
                   )}
                 </div>
@@ -807,20 +546,20 @@ export default function DetailDemande() {
               <CardContent className="space-y-3">
                 <div className="flex justify-between">
                   <span>Total commande HT :</span>
-                  <span className="font-medium">{demande.totalCommandeHT.toFixed(2)} €</span>
+                  <span className="font-medium">{demande.total.orderTotal.toFixed(2)} €</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Participation livraison :</span>
-                  <span className="font-medium">{demande.participationLivraison.toFixed(2)} €</span>
+                  <span className="font-medium">{demande.total.participationLivraison?.toFixed(2) || "0.00"} €</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Frais de facturation :</span>
-                  <span className="font-medium">{demande.fraisFacturation.toFixed(2)} €</span>
+                  <span className="font-medium">{demande.total.fraisFacturation?.toFixed(2) || "0.00"} €</span>
                 </div>
                 <hr />
                 <div className="flex justify-between text-lg font-bold">
                   <span>Total HT :</span>
-                  <span className="text-green-600">{demande.totalHT.toFixed(2)} €</span>
+                  <span className="text-green-600">{demande.total.total.toFixed(2)} €</span>
                 </div>
               </CardContent>
             </Card>
@@ -836,13 +575,13 @@ export default function DetailDemande() {
               <CardContent className="space-y-3">
                 <div>
                   <Label className="text-sm font-medium text-gray-500">Nom</Label>
-                  <p className="font-medium">{demande.demandeur}</p>
+                  <p className="font-medium">{demande.from}</p>
                 </div>
                 <div>
                   <Label className="text-sm font-medium text-gray-500">Département</Label>
                   <div className="flex items-center gap-2">
                     <Building className="h-4 w-4 text-gray-500" />
-                    <span>{demande.departement}</span>
+                    <span>{demande.billing.name}</span>
                   </div>
                 </div>
                 <div>
@@ -859,26 +598,6 @@ export default function DetailDemande() {
               </CardContent>
             </Card>
 
-            {/* Dates */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Calendar className="h-5 w-5" />
-                  Dates importantes
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div>
-                  <Label className="text-sm font-medium text-gray-500">Date de soumission</Label>
-                  <p>{new Date(demande.datesoumission).toLocaleDateString("fr-FR")}</p>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium text-gray-500">Livraison souhaitée</Label>
-                  <p>{new Date(demande.dateLivraisonSouhaitee).toLocaleDateString("fr-FR")}</p>
-                </div>
-              </CardContent>
-            </Card>
-
             {/* Livraison */}
             <Card>
               <CardHeader>
@@ -887,28 +606,91 @@ export default function DetailDemande() {
               <CardContent className="space-y-3">
                 <div>
                   <Label className="text-sm font-medium text-gray-500">Adresse</Label>
-                  <p className="text-sm">{demande.adresseLivraison}</p>
+                  <p className="text-sm">{demande.delivery.address}</p>
                 </div>
                 <div>
                   <Label className="text-sm font-medium text-gray-500">Téléphone contact</Label>
-                  <p>{demande.telContactLivraison}</p>
+                  <p>{demande.delivery.tel}</p>
                 </div>
               </CardContent>
             </Card>
 
-            {/* Commentaires */}
-            {demande.commentaire && (
+            {/* Commentaire */}
+            {demande.comment && (
               <Card>
                 <CardHeader>
-                  <CardTitle>Commentaires</CardTitle>
+                  <CardTitle>Commentaire</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-sm">{demande.commentaire}</p>
+                  <p className="text-sm">{demande.comment}</p>
                 </CardContent>
               </Card>
             )}
           </div>
         </div>
+
+        {/* Actions d'approbation/rejet/examen */}
+        {demande.status === "EN_ATTENTE_VALIDATION" && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Actions</CardTitle>
+            </CardHeader>
+            <CardContent className="flex gap-4">
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button className="bg-green-600 hover:bg-green-700">
+                  <CheckCircle className="h-4 w-4 mr-2" />
+                  Approuver
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Approuver la demande</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Êtes-vous sûr de vouloir approuver cette demande d&aposachat ? Cette action ne peut pas être
+                    annulée.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Annuler</AlertDialogCancel>
+                  <AlertDialogAction onClick={() => gererChangementStatut("VALIDE")}>
+                    Confirmer l&aposapprobation
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive">
+                  <XCircle className="h-4 w-4 mr-2" />
+                  Rejeter
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Rejeter la demande</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Êtes-vous sûr de vouloir rejeter cette demande d&aposachat ? Cette action ne peut pas être
+                    annulée.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Annuler</AlertDialogCancel>
+                  <AlertDialogAction onClick={() => gererChangementStatut("REJETE")}>
+                    Confirmer le rejet
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+
+            <Button variant="outline" onClick={() => gererChangementStatut("EN_ATTENTE_DE_PLUS_D_INFO")}>
+              <Clock className="h-4 w-4 mr-2" />
+              Mettre en examen
+            </Button>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   )
