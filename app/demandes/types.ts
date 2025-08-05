@@ -1,13 +1,98 @@
 // Type issu du contrat d'interface fourni
-export type StatusDemande =
-  | "EN_ATTENTE_VALIDATION"
-  | "VALIDE"
-  | "REJETE"
-  | "EN_ATTENTE_DE_PLUS_D_INFO"
+
+/**
+ * Enum des services Trio
+ */
+export enum TrioService {
+  /**
+   * ACC for 'Accueil'.
+   */
+  ACC = "ACC",
+
+  /**
+   * ADM for 'Admin'.
+   */
+  ADM = "ADM",
+
+  /**
+   * BAT for 'Bâtiment'.
+   */
+  BAT = "BAT",
+
+  /**
+   * BIL for 'Billetterie'.
+   */
+  BIL = "BIL",
+
+  /**
+   * COM for 'Communication commerciale'.
+   */
+  COM = "COM",
+
+  /**
+   * DAM for 'Dammage'.
+   */
+  DAM = "DAM",
+
+  /**
+   * PAR for 'Parc de roulage'.
+   */
+  PAR = "PAR",
+
+  /**
+   * PIS for 'Pistes'.
+   */
+  PIS = "PIS",
+
+  /**
+   * REST for 'Restaurant'.
+   */
+  REST = "REST",
+
+  /**
+   * RM for 'Remontée mécanique'.
+   */
+  RM = "RM",
+
+  /**
+   * USI for 'Snowmaker' (Usine à neige).
+   */
+  USI = "USI",
+
+  /**
+   * AUT for 'Autre'.
+   */
+  AUT = "AUT"
+}
+
+/**
+ * Enum des statuts de demande d'achat
+ */
+export enum PurchaseRequestStatus {
+  /** The request is in a draft state. No validation has been applied yet. */
+  BROUILLON = "BROUILLON",
+
+  /** The request has been submitted and is pending review by the director. */
+  A_VERIFIER = "A_VERIFIER",
+
+  /** The request was reviewed and returned for modification by the director. The station manager must revise it. */
+  A_MODIFIER = "A_MODIFIER",
+
+  /** The request has been approved and validated. */
+  VALIDEE = "VALIDEE",
+
+  /** The request has been rejected following a review. */
+  REJETEE = "REJETEE",
+
+  /** The request has been exported for accounting, and relevant documents have been archived. */
+  EXPORTEE = "EXPORTEE"
+}
+
+export type StatusDemande = PurchaseRequestStatus
 
 export interface Demande {
   id: string;
-  name: string;
+  name: string | null;
   date: string;
   deliveryDate: string | null;
   from: string;
@@ -32,38 +117,32 @@ export interface Demande {
     description: string;
     service: string;
     budgetType: string;
-    isBudgeted: boolean;
-    budgetIds?: string;
-    gi: boolean;
-    ger: boolean;
-    invest: boolean;
-    funct: boolean;
+    itemType?: string | null;
     referenceDevis?: string;
     quantity: number;
     unitPrice: number;
     price: number;
+    totalPriceConsistent?: boolean;
   }>;
   total: {
     orderTotal: number;
+    deliveryTotal?: number;
+    billingFees?: number;
     participationLivraison?: number;
     fraisFacturation?: number;
     other?: number;
     total: number;
+    totalCorrect?: boolean;
   };
   status: StatusDemande;
-  comment: string;
-  signatureDemandeur: boolean;
-  validationResponsable: boolean;
-  files: {
-    quotations: Array<{
-      id: string;
-      name: string;
-      timestamp: string;
-    }>;
-    bills: Array<{
-      id: string;
-      name: string;
-      timestamp: string;
-    }>;
-  };
+  comment?: string;
+  signatureDemandeur?: boolean;
+  validationResponsable?: boolean;
+  files: Array<{
+    id: string;
+    name: string;
+    category: string;
+    uploadInstant: string;
+    file?: File; // Fichier réel pour l'upload
+  }>;
 } 
