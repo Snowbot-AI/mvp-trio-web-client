@@ -19,7 +19,7 @@ const createHeaders = (contentType?: string) => {
 };
 
 // Fonction utilitaire pour créer un FormData équivalent à la commande curl
-const createFormDataFromJson = (jsonData: any, files?: File[]): FormData => {
+const createFormDataFromJson = (jsonData: Demande, files?: File[]): FormData => {
   const formData = new FormData()
 
   // Créer un fichier JSON à partir des données (équivalent à @test.json)
@@ -64,18 +64,6 @@ const fetchDemandeById = async (id: string): Promise<Demande> => {
   return response.json();
 };
 
-const createDemande = async (demande: Omit<Demande, 'id'>): Promise<Demande> => {
-  const response = await fetch(buildApiUrl(API_CONFIG.endpoints.demandes), {
-    method: 'POST',
-    headers: createHeaders('application/json'),
-    body: JSON.stringify(demande),
-  });
-  if (!response.ok) {
-    throw new Error(`Failed to create demande: ${response.status} ${response.statusText}`);
-  }
-  return response.json();
-};
-
 const updateDemande = async (formData: FormData): Promise<Demande> => {
   // Extraire l'ID depuis les données du formulaire
   const requestPart = formData.get('request')
@@ -104,23 +92,23 @@ const updateDemande = async (formData: FormData): Promise<Demande> => {
 };
 
 // Nouvelle fonction équivalente à la commande curl
-const updateDemandeWithJsonFile = async (input: any): Promise<Demande> => {
-  let jsonData: any
+const updateDemandeWithJsonFile = async (input: { requests: Demande, files: (File | undefined)[] }): Promise<Demande> => {
+  let jsonData: Demande;
   let files: File[] | undefined
 
   // Vérifier si l'input contient data et files ou si c'est directement les données
-  if (input.data && input.files) {
-    jsonData = input.data
-    files = input.files
+  if (input.requests && input.files) {
+    jsonData = input.requests
+    files = input.files.filter((file): file is File => file !== undefined)
   } else {
-    jsonData = input
+    jsonData = input.requests
     files = undefined
   }
 
   const formData = createFormDataFromJson(jsonData, files)
   const id = jsonData.id
 
-  const url = buildApiUrl(API_CONFIG.endpoints.demande(id))
+  const url = buildApiUrl(API_CONFIG.endpoints.demande(id as string))
   console.log("Update API URL:", url)
   const response = await fetch(url, {
     method: 'PUT',
@@ -150,19 +138,6 @@ export const useDemande = (id: string) => {
     queryKey: ['demande', id],
     queryFn: () => fetchDemandeById(id),
     enabled: !!id, // Only run query if id exists
-  });
-};
-
-// Mutation hooks
-export const useCreateDemande = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: createDemande,
-    onSuccess: () => {
-      // Invalidate and refetch demandes list
-      queryClient.invalidateQueries({ queryKey: ['demandes'] });
-    },
   });
 };
 

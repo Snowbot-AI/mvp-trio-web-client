@@ -33,8 +33,6 @@ import {
   CheckCircle,
   XCircle,
   Clock,
-  AlertCircle,
-  Calendar,
   User,
   Building,
   Euro,
@@ -49,10 +47,7 @@ import {
 import type { Demande, StatusDemande } from "../types"
 import { PurchaseRequestStatus, TrioService, getStationName } from "../types"
 import { validateDemande } from "../validation-schema"
-import {
-  setNestedField
-} from "../utils"
-import { useDemande, useUpdateDemande, useUpdateDemandeWithJsonFile } from "../hooks"
+import { useDemande, useUpdateDemandeWithJsonFile } from "../hooks"
 import { Badge } from "@/components/ui/badge"
 
 
@@ -62,7 +57,6 @@ export default function DetailDemande() {
 
   // Utilisation de TanStack Query pour récupérer les vraies données
   const { data: demande, isLoading, error } = useDemande(params.id)
-  const updateDemandeMutation = useUpdateDemande()
   const updateDemandeWithJsonFileMutation = useUpdateDemandeWithJsonFile()
 
   const [modeEdition, setModeEdition] = useState(false)
@@ -80,7 +74,6 @@ export default function DetailDemande() {
     reset,
     watch,
     setValue,
-    formState: { errors, isDirty, isValid }
   } = useForm<Demande>({
     mode: 'onChange', // Validation en temps réel
     defaultValues: demande || undefined
@@ -92,13 +85,13 @@ export default function DetailDemande() {
 
 
   // Fonction de validation en temps réel
-  const validateField = (fieldName: string, value: any) => {
+  const validateField = (fieldName: string, value: string | number) => {
     // Mettre à jour les données du formulaire
-    setValue(fieldName as any, value, { shouldValidate: false })
+    setValue(fieldName as keyof Demande, value as keyof Demande, { shouldValidate: false })
 
     // Validation simple pour les champs obligatoires
     if (fieldName === "from") {
-      if (!value || value.trim() === '') {
+      if (!value || (typeof value === 'string' && value.trim() === '')) {
         setValidationErrors(prev => ({ ...prev, [fieldName]: "Le demandeur est requis" }))
       } else {
         setValidationErrors(prev => {
@@ -112,21 +105,21 @@ export default function DetailDemande() {
 
     // Pour les autres champs, utiliser la validation existante
     const currentData = watch()
-    let dataToValidate = { ...currentData } as any
+    const dataToValidate = { ...currentData } as Record<string, unknown>
 
     // Gérer les champs imbriqués (ex: billing.siret)
     if (fieldName.includes('.')) {
       const parts = fieldName.split('.')
-      let current = dataToValidate
+      let current = dataToValidate as Record<string, unknown>
       for (let i = 0; i < parts.length - 1; i++) {
         if (!current[parts[i]]) {
           current[parts[i]] = {}
         }
-        current = current[parts[i]]
+        current = current[parts[i]] as Record<string, unknown>
       }
       current[parts[parts.length - 1]] = value
     } else {
-      dataToValidate[fieldName] = value
+      (dataToValidate as Record<string, unknown>)[fieldName] = value
     }
 
     const validation = validateDemande(dataToValidate)
@@ -151,7 +144,7 @@ export default function DetailDemande() {
   // Fonction de validation spécifique pour les champs avec regex
   const validateRegexField = (fieldName: string, value: string, regex: RegExp, errorMessage: string) => {
     // Mettre à jour les données du formulaire
-    setValue(fieldName as any, value, { shouldValidate: false })
+    setValue(fieldName as keyof Demande, value, { shouldValidate: false })
 
     // Si le champ est vide, on ne valide pas (pas d'erreur)
     if (!value || value.trim() === '') {
@@ -180,7 +173,7 @@ export default function DetailDemande() {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
     // Mettre à jour les données du formulaire
-    setValue(fieldName as any, value, { shouldValidate: false })
+    setValue(fieldName as keyof Demande, value, { shouldValidate: false })
 
     // Si le champ est vide, on ne valide pas (pas d'erreur)
     if (!value || value.trim() === '') {
@@ -209,7 +202,7 @@ export default function DetailDemande() {
     setValidationErrors({})
   }
 
-  const { fields: items, append: appendItem, remove: removeItem } = useFieldArray({
+  const { fields: items } = useFieldArray({
     control,
     name: "items"
   })
@@ -226,7 +219,7 @@ export default function DetailDemande() {
     clearValidationErrors()
 
     // Si un article est en cours d'ajout, l'inclure dans les données
-    let dataToSave = { ...data }
+    const dataToSave = { ...data }
     if (ajoutArticle) {
       const currentItems = data.items || []
       const newItemIndex = currentItems.length
@@ -261,10 +254,10 @@ export default function DetailDemande() {
 
     // Extraire les fichiers uploadés
     const files = watch("files") || []
-    const filesToUpload = files.filter((file: any) => file.file).map((file: any) => file.file)
+    const filesToUpload = files.filter((file) => file.file).map((file) => file.file)
 
     // Utiliser l'approche avec fichier JSON (équivalente à curl)
-    updateDemandeWithJsonFileMutation.mutate({ data: dataToSave, files: filesToUpload }, {
+    updateDemandeWithJsonFileMutation.mutate({ requests: dataToSave, files: filesToUpload }, {
       onSuccess: () => {
         setModeEdition(false)
         setAjoutArticle(false)
@@ -298,7 +291,7 @@ export default function DetailDemande() {
 
     // Utiliser l'approche avec fichier JSON pour le changement de statut
     // Pas de fichiers pour le changement de statut, juste les données
-    updateDemandeWithJsonFileMutation.mutate(demandeUpdated, {
+    updateDemandeWithJsonFileMutation.mutate({ requests: demandeUpdated, files: [] }, {
       onSuccess: () => {
         console.log("Statut changé:", nouveauStatut)
         toast.success("Statut changé avec succès !")
@@ -341,7 +334,7 @@ export default function DetailDemande() {
 
   const gererSuppressionFichier = (idFichier: string) => {
     const currentFiles = watch("files") || []
-    const updatedFiles = currentFiles.filter((f: any) => f.id !== idFichier)
+    const updatedFiles = currentFiles.filter((f) => f.id !== idFichier)
 
     // Mettre à jour le formulaire
     const currentData = watch()
@@ -408,7 +401,7 @@ export default function DetailDemande() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Demande non trouvée</h2>
-          <p className="text-gray-600 mb-4">La demande avec l'ID {params.id} n'existe pas.</p>
+          <p className="text-gray-600 mb-4">La demande avec l&apos;ID {params.id} n&apos;existe pas.</p>
           <Button onClick={() => router.push("/")}>
             <ArrowLeft className="h-4 w-4 mr-2" />
             Retour à la liste
@@ -501,14 +494,14 @@ export default function DetailDemande() {
                     <AlertDialogHeader>
                       <AlertDialogTitle>Approuver la demande</AlertDialogTitle>
                       <AlertDialogDescription>
-                        Êtes-vous sûr de vouloir approuver cette demande d'achat ? Cette action ne peut pas être
+                        Êtes-vous sûr de vouloir approuver cette demande d&apos;achat ? Cette action ne peut pas être
                         annulée.
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                       <AlertDialogCancel>Annuler</AlertDialogCancel>
                       <AlertDialogAction onClick={() => gererChangementStatut(PurchaseRequestStatus.VALIDEE)}>
-                        Confirmer l'approbation
+                        Confirmer l&apos;approbation
                       </AlertDialogAction>
                     </AlertDialogFooter>
                   </AlertDialogContent>
@@ -525,7 +518,7 @@ export default function DetailDemande() {
                     <AlertDialogHeader>
                       <AlertDialogTitle>Rejeter la demande</AlertDialogTitle>
                       <AlertDialogDescription>
-                        Êtes-vous sûr de vouloir rejeter cette demande d'achat ? Cette action ne peut pas être
+                        Êtes-vous sûr de vouloir rejeter cette demande d&apos;achat ? Cette action ne peut pas être
                         annulée. Si oui veuillez préciser la raison du rejet.
                       </AlertDialogDescription>
                     </AlertDialogHeader>
@@ -570,14 +563,14 @@ export default function DetailDemande() {
                   <AlertDialogTrigger asChild>
                     <Button variant="outline">
                       <Clock className="h-4 w-4 mr-2" />
-                      Demander plus d'info
+                      Demander plus d&apos;info
                     </Button>
                   </AlertDialogTrigger>
                   <AlertDialogContent>
                     <AlertDialogHeader>
-                      <AlertDialogTitle>Demander plus d'informations</AlertDialogTitle>
+                      <AlertDialogTitle>Demander plus d&apos;informations</AlertDialogTitle>
                       <AlertDialogDescription>
-                        Êtes-vous sûr de vouloir demander plus d'informations sur cette demande d'achat ? Si oui veuillez préciser quelles informations supplémentaires sont nécessaires.
+                        Êtes-vous sûr de vouloir demander plus d&apos;informations sur cette demande d&apos;achat ? Si oui veuillez préciser quelles informations supplémentaires sont nécessaires.
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <div className="py-4">
@@ -659,7 +652,7 @@ export default function DetailDemande() {
                       <AlertDialogHeader>
                         <AlertDialogTitle>Soumettre la demande</AlertDialogTitle>
                         <AlertDialogDescription>
-                          Êtes-vous sûr de vouloir soumettre cette demande d'achat pour validation ? Cette action ne peut pas être
+                          Êtes-vous sûr de vouloir soumettre cette demande d&apos;achat pour validation ? Cette action ne peut pas être
                           annulée.
                         </AlertDialogDescription>
                       </AlertDialogHeader>
@@ -1248,7 +1241,7 @@ export default function DetailDemande() {
                 )}
 
                 <div className="space-y-2">
-                  {watch("files")?.filter((fichier: any) => fichier.category === "quotations").map((fichier: any) => (
+                  {watch("files")?.filter((fichier) => fichier.category === "quotations").map((fichier) => (
                     <div key={fichier.id} className="flex items-center justify-between p-3 border rounded-lg">
                       <div className="flex items-center gap-3">
                         <File className="h-5 w-5 text-gray-500" />
@@ -1274,7 +1267,7 @@ export default function DetailDemande() {
                     </div>
                   ))}
 
-                  {(!watch("files") || watch("files")?.filter((fichier: any) => fichier.category === "quotations").length === 0) && (
+                  {(!watch("files") || watch("files")?.filter((fichier) => fichier.category === "quotations").length === 0) && (
                     <p className="text-gray-500 text-center py-4">Aucun devis</p>
                   )}
                 </div>
@@ -1317,7 +1310,7 @@ export default function DetailDemande() {
                 )}
 
                 <div className="space-y-2">
-                  {watch("files")?.filter((fichier: any) => fichier.category === "invoices").map((fichier: any) => (
+                  {watch("files")?.filter((fichier) => fichier.category === "invoices").map((fichier) => (
                     <div key={fichier.id} className="flex items-center justify-between p-3 border rounded-lg">
                       <div className="flex items-center gap-3">
                         <File className="h-5 w-5 text-gray-500" />
@@ -1343,7 +1336,7 @@ export default function DetailDemande() {
                     </div>
                   ))}
 
-                  {(!watch("files") || watch("files")?.filter((fichier: any) => fichier.category === "invoices").length === 0) && (
+                  {(!watch("files") || watch("files")?.filter((fichier) => fichier.category === "invoices").length === 0) && (
                     <p className="text-gray-500 text-center py-4">Aucune facture</p>
                   )}
                 </div>

@@ -1,9 +1,7 @@
 "use client"
 
 import type React from "react"
-
 import { useState } from "react"
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -19,36 +17,11 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
-import { Search, Eye, CheckCircle, XCircle, Clock, AlertCircle, Plus, Loader2, FileText, Edit, Archive } from "lucide-react"
+import { Search, CheckCircle, XCircle, Clock, Plus, Loader2, FileText, Edit, Archive } from "lucide-react"
 import { Textarea } from "@/components/ui/textarea"
 import { useRouter } from "next/navigation"
-import { buildApiUrl, API_CONFIG } from "../../lib/api-config"
 import { Demande, getStationName, PurchaseRequestStatus } from "./types"
-import { DemandeSchema } from "./schema"
 import { useDemandes } from "./hooks"
-
-// Hook pour créer une nouvelle demande
-const useCreateDemande = () => {
-  // const queryClient = useQueryClient()
-  
-  // return useMutation({
-  //   mutationFn: async (nouvelleDemande: Omit<Demande, 'id' | 'status' | 'date'>) => {
-  //     const response = await fetch(buildApiUrl(API_CONFIG.endpoints.demandes), {
-  //       method: 'POST',
-  //       headers: createHeaders('application/json'),
-  //       body: JSON.stringify(nouvelleDemande),
-  //     })
-  //     if (!response.ok) {
-  //       throw new Error('Erreur lors de la création de la demande')
-  //     }
-  //     return response.json()
-  //   },
-  //   onSuccess: () => {
-  //     // Invalider et refetch les demandes après création
-  //     queryClient.invalidateQueries({ queryKey: ['demandes'] })
-  //   },
-  // })
-}
 
 const getIconeStatut = (statut: PurchaseRequestStatus) => {
   switch (statut) {
@@ -86,19 +59,6 @@ const getCouleurStatut = (statut: PurchaseRequestStatus) => {
   }
 }
 
-const getCouleurPriorite = (priorite: string) => {
-  switch (priorite) {
-    case "urgente":
-      return "bg-red-100 text-red-800 border-red-200"
-    case "elevee":
-      return "bg-orange-100 text-orange-800 border-orange-200"
-    case "moyenne":
-      return "bg-blue-100 text-blue-800 border-blue-200"
-    default:
-      return "bg-gray-100 text-gray-800 border-gray-200"
-  }
-}
-
 const getLibelleStatut = (statut: PurchaseRequestStatus) => {
   switch (statut) {
     case PurchaseRequestStatus.BROUILLON:
@@ -118,26 +78,11 @@ const getLibelleStatut = (statut: PurchaseRequestStatus) => {
   }
 }
 
-const getLibellePriorite = (priorite: string) => {
-  switch (priorite) {
-    case "faible":
-      return "Faible"
-    case "moyenne":
-      return "Moyenne"
-    case "elevee":
-      return "Élevée"
-    case "urgente":
-      return "Urgente"
-    default:
-      return priorite
-  }
-}
 
 export default function DemandesPage() {
   const [termeRecherche, setTermeRecherche] = useState("")
   const [filtreStatut, setFiltreStatut] = useState("tous")
   const [filtreDepartement, setFiltreDepartement] = useState("tous")
-  const [, setDemandeSelectionnee] = useState<Demande | null>(null)
 
   const [formulaireOuvert, setFormulaireOuvert] = useState(false)
   const [nouvelleDemande, setNouvelleDemande] = useState({
@@ -150,11 +95,10 @@ export default function DemandesPage() {
   })
 
   const router = useRouter()
-  
+
   // Utiliser React Query pour récupérer les demandes
   const { data: demandes, isLoading, error } = useDemandes()
-  const createDemandeMutation = useCreateDemande()
-  
+
   const demandesFiltrees = (demandes || []).filter((dem: Demande) => {
     const correspondRecherche =
       (dem.name?.toLowerCase() || '').includes(termeRecherche.toLowerCase()) ||
@@ -177,17 +121,12 @@ export default function DemandesPage() {
 
   const montantTotal = demandesFiltrees.reduce((somme: number, dem: Demande) => somme + (dem.total.total || 0), 0)
 
-  const gererChangementStatut = (id: string, nouveauStatut: PurchaseRequestStatus) => {
-    // TODO: Implémenter la mutation pour changer le statut
-    console.log(`Changer le statut de ${id} vers ${nouveauStatut}`)
-  }
-
   const gererSoumissionFormulaire = (e: React.FormEvent) => {
     e.preventDefault()
 
     // TODO: Implémenter la création de demande avec le bon format
     console.log("Création de demande:", nouvelleDemande)
-    
+
     // Réinitialiser le formulaire
     setNouvelleDemande({
       name: "",
@@ -230,8 +169,8 @@ export default function DemandesPage() {
           <div className="bg-red-50 border border-red-200 rounded-lg p-4">
             <h2 className="text-red-800 font-semibold">Erreur lors du chargement</h2>
             <p className="text-red-600 mt-1">{error.message}</p>
-            <Button 
-              onClick={() => window.location.reload()} 
+            <Button
+              onClick={() => window.location.reload()}
               className="mt-2"
               variant="outline"
             >
@@ -249,8 +188,8 @@ export default function DemandesPage() {
         {/* En-tête */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Suivi des Demandes d'Achat</h1>
-            <p className="text-gray-600 mt-1">Gérer et suivre les demandes d'achat</p>
+            <h1 className="text-3xl font-bold text-gray-900">Suivi des Demandes d&apos;Achat</h1>
+            <p className="text-gray-600 mt-1">Gérer et suivre les demandes d&apos;achat</p>
           </div>
           <Dialog open={formulaireOuvert} onOpenChange={setFormulaireOuvert}>
             <DialogTrigger asChild>
@@ -268,113 +207,113 @@ export default function DemandesPage() {
               </DialogHeader>
               <form onSubmit={gererSoumissionFormulaire} className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                     <div className="md:col-span-2">
-                     <Label htmlFor="name" className="text-sm font-medium">
-                       Nom de la demande *
-                     </Label>
-                     <Input
-                       id="name"
-                       value={nouvelleDemande.name}
-                       onChange={(e) => gererChangementChamp("name", e.target.value)}
-                       placeholder="Ex: Fournitures de bureau - T1"
-                       required
-                       className="mt-1"
-                     />
-                   </div>
+                  <div className="md:col-span-2">
+                    <Label htmlFor="name" className="text-sm font-medium">
+                      Nom de la demande *
+                    </Label>
+                    <Input
+                      id="name"
+                      value={nouvelleDemande.name}
+                      onChange={(e) => gererChangementChamp("name", e.target.value)}
+                      placeholder="Ex: Fournitures de bureau - T1"
+                      required
+                      className="mt-1"
+                    />
+                  </div>
 
-                   <div>
-                     <Label htmlFor="from" className="text-sm font-medium">
-                       Demandeur *
-                     </Label>
-                     <Input
-                       id="from"
-                       value={nouvelleDemande.from}
-                       onChange={(e) => gererChangementChamp("from", e.target.value)}
-                       placeholder="Nom du demandeur"
-                       required
-                       className="mt-1"
-                     />
-                   </div>
+                  <div>
+                    <Label htmlFor="from" className="text-sm font-medium">
+                      Demandeur *
+                    </Label>
+                    <Input
+                      id="from"
+                      value={nouvelleDemande.from}
+                      onChange={(e) => gererChangementChamp("from", e.target.value)}
+                      placeholder="Nom du demandeur"
+                      required
+                      className="mt-1"
+                    />
+                  </div>
 
-                   <div>
-                     <Label htmlFor="service" className="text-sm font-medium">
-                       Service *
-                     </Label>
-                     <Select
-                       value={nouvelleDemande.service}
-                       onValueChange={(value) => gererChangementChamp("service", value)}
-                       required
-                     >
-                       <SelectTrigger className="mt-1">
-                         <SelectValue placeholder="Sélectionner un service" />
-                       </SelectTrigger>
-                       <SelectContent>
-                         <SelectItem value="ACC">Accueil</SelectItem>
-                         <SelectItem value="ADM">Admin</SelectItem>
-                         <SelectItem value="BAT">Bâtiment</SelectItem>
-                         <SelectItem value="BIL">Billetterie</SelectItem>
-                         <SelectItem value="COM">Communication</SelectItem>
-                         <SelectItem value="DAM">Dammage</SelectItem>
-                         <SelectItem value="PAR">Parc de roulage</SelectItem>
-                         <SelectItem value="PIS">Pistes</SelectItem>
-                         <SelectItem value="REST">Restaurant</SelectItem>
-                         <SelectItem value="RM">Remontée mécanique</SelectItem>
-                         <SelectItem value="USI">Snowmaker</SelectItem>
-                         <SelectItem value="AUT">Autre</SelectItem>
-                       </SelectContent>
-                     </Select>
-                   </div>
+                  <div>
+                    <Label htmlFor="service" className="text-sm font-medium">
+                      Service *
+                    </Label>
+                    <Select
+                      value={nouvelleDemande.service}
+                      onValueChange={(value) => gererChangementChamp("service", value)}
+                      required
+                    >
+                      <SelectTrigger className="mt-1">
+                        <SelectValue placeholder="Sélectionner un service" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="ACC">Accueil</SelectItem>
+                        <SelectItem value="ADM">Admin</SelectItem>
+                        <SelectItem value="BAT">Bâtiment</SelectItem>
+                        <SelectItem value="BIL">Billetterie</SelectItem>
+                        <SelectItem value="COM">Communication</SelectItem>
+                        <SelectItem value="DAM">Dammage</SelectItem>
+                        <SelectItem value="PAR">Parc de roulage</SelectItem>
+                        <SelectItem value="PIS">Pistes</SelectItem>
+                        <SelectItem value="REST">Restaurant</SelectItem>
+                        <SelectItem value="RM">Remontée mécanique</SelectItem>
+                        <SelectItem value="USI">Snowmaker</SelectItem>
+                        <SelectItem value="AUT">Autre</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-                   <div>
-                     <Label htmlFor="total" className="text-sm font-medium">
-                       Montant total (€) *
-                     </Label>
-                     <Input
-                       id="total"
-                       type="number"
-                       step="0.01"
-                       min="0"
-                       value={nouvelleDemande.total}
-                       onChange={(e) => gererChangementChamp("total", e.target.value)}
-                       placeholder="0.00"
-                       required
-                       className="mt-1"
-                     />
-                   </div>
+                  <div>
+                    <Label htmlFor="total" className="text-sm font-medium">
+                      Montant total (€) *
+                    </Label>
+                    <Input
+                      id="total"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={nouvelleDemande.total}
+                      onChange={(e) => gererChangementChamp("total", e.target.value)}
+                      placeholder="0.00"
+                      required
+                      className="mt-1"
+                    />
+                  </div>
 
-                   <div>
-                     <Label htmlFor="priority" className="text-sm font-medium">
-                       Priorité
-                     </Label>
-                     <Select
-                       value={nouvelleDemande.priority}
-                       onValueChange={(value: "HIGH" | "LOW") =>
-                         gererChangementChamp("priority", value)
-                       }
-                     >
-                       <SelectTrigger className="mt-1">
-                         <SelectValue />
-                       </SelectTrigger>
-                       <SelectContent>
-                         <SelectItem value="LOW">Faible</SelectItem>
-                         <SelectItem value="HIGH">Élevée</SelectItem>
-                       </SelectContent>
-                     </Select>
-                   </div>
+                  <div>
+                    <Label htmlFor="priority" className="text-sm font-medium">
+                      Priorité
+                    </Label>
+                    <Select
+                      value={nouvelleDemande.priority}
+                      onValueChange={(value: "HIGH" | "LOW") =>
+                        gererChangementChamp("priority", value)
+                      }
+                    >
+                      <SelectTrigger className="mt-1">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="LOW">Faible</SelectItem>
+                        <SelectItem value="HIGH">Élevée</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-                   <div className="md:col-span-2">
-                     <Label htmlFor="description" className="text-sm font-medium">
-                       Description
-                     </Label>
-                     <Textarea
-                       id="description"
-                       value={nouvelleDemande.description}
-                       onChange={(e) => gererChangementChamp("description", e.target.value)}
-                       placeholder="Description de la demande..."
-                       rows={4}
-                       className="mt-1"
-                     />
-                   </div>
+                  <div className="md:col-span-2">
+                    <Label htmlFor="description" className="text-sm font-medium">
+                      Description
+                    </Label>
+                    <Textarea
+                      id="description"
+                      value={nouvelleDemande.description}
+                      onChange={(e) => gererChangementChamp("description", e.target.value)}
+                      placeholder="Description de la demande..."
+                      rows={4}
+                      className="mt-1"
+                    />
+                  </div>
                 </div>
 
                 <div className="flex items-center justify-between pt-4 border-t">
@@ -383,17 +322,17 @@ export default function DemandesPage() {
                     <Button type="button" variant="outline" onClick={() => setFormulaireOuvert(false)}>
                       Annuler
                     </Button>
-                                         <Button
-                       type="submit"
-                       disabled={
-                         !nouvelleDemande.name ||
-                         !nouvelleDemande.from ||
-                         !nouvelleDemande.service ||
-                         !nouvelleDemande.total
-                       }
-                     >
-                       Soumettre la demande
-                     </Button>
+                    <Button
+                      type="submit"
+                      disabled={
+                        !nouvelleDemande.name ||
+                        !nouvelleDemande.from ||
+                        !nouvelleDemande.service ||
+                        !nouvelleDemande.total
+                      }
+                    >
+                      Soumettre la demande
+                    </Button>
                   </div>
                 </div>
               </form>
@@ -520,43 +459,43 @@ export default function DemandesPage() {
             <CardDescription>Gérer et suivre toutes les demandes d&aposachat</CardDescription>
           </CardHeader>
           <CardContent>
-                         <Table>
-               <TableHeader>
-                 <TableRow>
-                   <TableHead>Demandeur</TableHead>
-                   <TableHead>Date</TableHead>
-                   <TableHead>Département</TableHead>
-                   <TableHead>Description</TableHead>
-                   <TableHead>Montant</TableHead>
-                   <TableHead>Statut</TableHead>
-                 </TableRow>
-               </TableHeader>
-               <TableBody>
-                 {demandesFiltrees.map((dem) => (
-                   <TableRow
-                     key={dem.id || 'unknown'}
-                     className="cursor-pointer hover:bg-gray-50 transition-colors"
-                     onClick={() => dem.id && router.push(`/demandes/${dem.id}`)}
-                   >
-                      <TableCell className="font-medium">{dem.from || 'N/A'}</TableCell>
-                      <TableCell>{dem.date ? new Date(dem.date).toLocaleDateString("fr-FR") : 'N/A'}</TableCell>
-                      <TableCell>{getStationName(dem.code) || 'N/A'}</TableCell>
-                      <TableCell className="max-w-xs truncate" title={dem.description || ''}>
-                        {dem.description || 'Aucune description'}
-                      </TableCell>
-                      <TableCell>{(dem.total.total || 0).toLocaleString()} €</TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          {getIconeStatut(dem.status || PurchaseRequestStatus.BROUILLON)}
-                          <Badge variant="outline" className={getCouleurStatut(dem.status || PurchaseRequestStatus.BROUILLON)}>
-                            {getLibelleStatut(dem.status || PurchaseRequestStatus.BROUILLON)}
-                          </Badge>
-                        </div>
-                      </TableCell>
-                   </TableRow>
-                 ))}
-               </TableBody>
-             </Table>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Demandeur</TableHead>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Département</TableHead>
+                  <TableHead>Description</TableHead>
+                  <TableHead>Montant</TableHead>
+                  <TableHead>Statut</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {demandesFiltrees.map((dem) => (
+                  <TableRow
+                    key={dem.id || 'unknown'}
+                    className="cursor-pointer hover:bg-gray-50 transition-colors"
+                    onClick={() => dem.id && router.push(`/demandes/${dem.id}`)}
+                  >
+                    <TableCell className="font-medium">{dem.from || 'N/A'}</TableCell>
+                    <TableCell>{dem.date ? new Date(dem.date).toLocaleDateString("fr-FR") : 'N/A'}</TableCell>
+                    <TableCell>{getStationName(dem.code) || 'N/A'}</TableCell>
+                    <TableCell className="max-w-xs truncate" title={dem.description || ''}>
+                      {dem.description || 'Aucune description'}
+                    </TableCell>
+                    <TableCell>{(dem.total.total || 0).toLocaleString()} €</TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        {getIconeStatut(dem.status || PurchaseRequestStatus.BROUILLON)}
+                        <Badge variant="outline" className={getCouleurStatut(dem.status || PurchaseRequestStatus.BROUILLON)}>
+                          {getLibelleStatut(dem.status || PurchaseRequestStatus.BROUILLON)}
+                        </Badge>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           </CardContent>
         </Card>
       </div>

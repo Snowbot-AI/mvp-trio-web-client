@@ -69,17 +69,3 @@ export const getLibellePriorite = (priorite: string) => {
       return priorite
   }
 }
-
-export const formatTailleFichier = (taille: number) => {
-  if (taille < 1024) return `${taille} B`
-  if (taille < 1024 * 1024) return `${(taille / 1024).toFixed(1)} KB`
-  return `${(taille / (1024 * 1024)).toFixed(1)} MB`
-}
-
-export function setNestedField(obj: any, path: string, value: any) {
-  const keys = path.split('.')
-  const lastKey = keys.pop()!
-  const deep = keys.reduce((acc: any, key) => acc[key], obj)
-  deep[lastKey] = value
-  return { ...obj }
-} 

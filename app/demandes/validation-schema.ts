@@ -54,7 +54,7 @@ export const demandeValidationSchema = z.object({
 export type DemandeValidation = z.infer<typeof demandeValidationSchema>
 
 // Fonction utilitaire pour valider une demande
-export const validateDemande = (data: any) => {
+export const validateDemande = (data: unknown) => {
   return demandeValidationSchema.safeParse(data)
 }
 

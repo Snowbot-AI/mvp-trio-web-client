@@ -3,7 +3,7 @@
 import Image from "next/image"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { Home, FileText, User } from "lucide-react"
+import { User } from "lucide-react"
 
 export default function Header() {
   return (
@@ -12,7 +12,7 @@ export default function Header() {
         <div className="flex justify-between items-center h-16">
           {/* Section gauche vide pour équilibrer */}
           <div className="w-16"></div>
-          
+
           {/* Logo centré */}
           <Link href="/" className="flex items-center">
             <div className="relative w-16 h-16">
