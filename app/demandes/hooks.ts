@@ -10,40 +10,42 @@ const createHeaders = (contentType?: string) => {
   const headers: Record<string, string> = {
     'trio_auth': AUTH_TOKEN,
   };
-  
+
   if (contentType) {
     headers['Content-Type'] = contentType;
   }
-  
+
   return headers;
 };
 
 // Fonction utilitaire pour créer un FormData équivalent à la commande curl
 const createFormDataFromJson = (jsonData: any, files?: File[]): FormData => {
   const formData = new FormData()
-  
+
   // Créer un fichier JSON à partir des données (équivalent à @test.json)
   const jsonBlob = new Blob([JSON.stringify(jsonData, null, 2)], {
     type: 'application/json'
   })
   const jsonFile = new File([jsonBlob], 'request.json', { type: 'application/json' })
-  
+
   // Ajouter le fichier JSON comme dans la commande curl
   formData.append('request', jsonFile)
-  
+
   // Ajouter les fichiers s'ils existent
   if (files && files.length > 0) {
     files.forEach(file => {
       formData.append('files', file)
     })
   }
-  
+
   return formData
 }
 
 // Fonctions API utilisant la configuration
 const fetchDemandes = async (): Promise<Demande[]> => {
-  const response = await fetch(buildApiUrl(API_CONFIG.endpoints.demandes), {
+  const url = buildApiUrl(API_CONFIG.endpoints.demandes)
+  console.log("API URL:", url)
+  const response = await fetch(url, {
     headers: createHeaders(),
   });
   if (!response.ok) {
@@ -78,7 +80,7 @@ const updateDemande = async (formData: FormData): Promise<Demande> => {
   // Extraire l'ID depuis les données du formulaire
   const requestPart = formData.get('request')
   let id: string
-  
+
   if (requestPart instanceof File) {
     // Si c'est un fichier JSON, lire son contenu pour extraire l'ID
     const text = await requestPart.text()
@@ -89,14 +91,14 @@ const updateDemande = async (formData: FormData): Promise<Demande> => {
     const data = JSON.parse(requestPart as string)
     id = data.id
   }
-  
+
   const response = await fetch(buildApiUrl(API_CONFIG.endpoints.demande(id)), {
     method: 'PUT',
     headers: createHeaders(), // Pas de Content-Type pour FormData, le navigateur le fait automatiquement
     body: formData,
   });
   if (!response.ok) {
-    throw new Error(`Failed to update demande ${id}: ${response.status} ${response.statusText}`);
+    throw new Error(`${response.status} ${response.statusText}`);
   }
   return response.json();
 };
@@ -105,7 +107,7 @@ const updateDemande = async (formData: FormData): Promise<Demande> => {
 const updateDemandeWithJsonFile = async (input: any): Promise<Demande> => {
   let jsonData: any
   let files: File[] | undefined
-  
+
   // Vérifier si l'input contient data et files ou si c'est directement les données
   if (input.data && input.files) {
     jsonData = input.data
@@ -114,18 +116,24 @@ const updateDemandeWithJsonFile = async (input: any): Promise<Demande> => {
     jsonData = input
     files = undefined
   }
-  
+
   const formData = createFormDataFromJson(jsonData, files)
   const id = jsonData.id
-  
-  const response = await fetch(buildApiUrl(API_CONFIG.endpoints.demande(id)), {
+
+  const url = buildApiUrl(API_CONFIG.endpoints.demande(id))
+  console.log("Update API URL:", url)
+  const response = await fetch(url, {
     method: 'PUT',
     headers: createHeaders(), // Pas de Content-Type pour FormData, le navigateur le fait automatiquement
     body: formData,
   });
+
   if (!response.ok) {
-    throw new Error(`Failed to update demande ${id}: ${response.status} ${response.statusText}`);
+    // Récupérer le message d'erreur de la réponse JSON
+    const errorData = await response.json()
+    throw new Error(errorData.error || `${response.status} ${response.statusText}`)
   }
+
   return response.json();
 };
 
@@ -148,7 +156,7 @@ export const useDemande = (id: string) => {
 // Mutation hooks
 export const useCreateDemande = () => {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: createDemande,
     onSuccess: () => {
@@ -160,7 +168,7 @@ export const useCreateDemande = () => {
 
 export const useUpdateDemande = () => {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: updateDemande,
     onSuccess: (updatedDemande) => {
@@ -174,7 +182,7 @@ export const useUpdateDemande = () => {
 
 export const useUpdateDemandeWithJsonFile = () => {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: updateDemandeWithJsonFile,
     onSuccess: (updatedDemande) => {

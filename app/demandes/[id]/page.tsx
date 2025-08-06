@@ -23,6 +23,8 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Toaster } from "@/components/ui/sonner"
+import { toast } from "sonner"
 import {
   ArrowLeft,
   Edit,
@@ -45,7 +47,7 @@ import {
   Archive,
 } from "lucide-react"
 import type { Demande, StatusDemande } from "../types"
-import { PurchaseRequestStatus, TrioService } from "../types"
+import { PurchaseRequestStatus, TrioService, getStationName } from "../types"
 import { validateDemande } from "../validation-schema"
 import {
   setNestedField
@@ -87,15 +89,29 @@ export default function DetailDemande() {
   // État pour les erreurs de validation en temps réel
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({})
 
+
+
   // Fonction de validation en temps réel
   const validateField = (fieldName: string, value: any) => {
     // Mettre à jour les données du formulaire
     setValue(fieldName as any, value, { shouldValidate: false })
 
-    // Récupérer les données actuelles du formulaire
-    const currentData = watch()
+    // Validation simple pour les champs obligatoires
+    if (fieldName === "from") {
+      if (!value || value.trim() === '') {
+        setValidationErrors(prev => ({ ...prev, [fieldName]: "Le demandeur est requis" }))
+      } else {
+        setValidationErrors(prev => {
+          const newErrors = { ...prev }
+          delete newErrors[fieldName]
+          return newErrors
+        })
+      }
+      return
+    }
 
-    // Construire l'objet à valider en mettant à jour le champ spécifique
+    // Pour les autres champs, utiliser la validation existante
+    const currentData = watch()
     let dataToValidate = { ...currentData } as any
 
     // Gérer les champs imbriqués (ex: billing.siret)
@@ -209,18 +225,62 @@ export default function DetailDemande() {
     // Nettoyer les erreurs de validation avant la sauvegarde
     clearValidationErrors()
 
+    // Si un article est en cours d'ajout, l'inclure dans les données
+    let dataToSave = { ...data }
+    if (ajoutArticle) {
+      const currentItems = data.items || []
+      const newItemIndex = currentItems.length
+
+      const description = watch(`items.${newItemIndex}.description`) || ""
+      const service = watch(`items.${newItemIndex}.service`) || ""
+      const quantity = watch(`items.${newItemIndex}.quantity`) || 0
+      const unitPrice = watch(`items.${newItemIndex}.unitPrice`) || 0
+      const price = watch(`items.${newItemIndex}.price`) || 0
+
+      // N'ajouter l'article que s'il a au moins une description et un service
+      if (description.trim() && service.trim()) {
+        const nouvelArticle = {
+          description: description,
+          service: service,
+          budgetType: watch(`items.${newItemIndex}.budgetType`) || "B",
+          itemType: watch(`items.${newItemIndex}.itemType`) || null,
+          referenceDevis: watch(`items.${newItemIndex}.referenceDevis`) || undefined,
+          quantity: quantity,
+          unitPrice: unitPrice,
+          price: price,
+        }
+
+        dataToSave.items = [...currentItems, nouvelArticle]
+      } else {
+        // Si l'article n'est pas complet, ne pas l'ajouter
+        dataToSave.items = currentItems
+      }
+    }
+
+
+
     // Extraire les fichiers uploadés
     const files = watch("files") || []
     const filesToUpload = files.filter((file: any) => file.file).map((file: any) => file.file)
 
     // Utiliser l'approche avec fichier JSON (équivalente à curl)
-    updateDemandeWithJsonFileMutation.mutate({ data, files: filesToUpload }, {
+    updateDemandeWithJsonFileMutation.mutate({ data: dataToSave, files: filesToUpload }, {
       onSuccess: () => {
         setModeEdition(false)
-        console.log("Demande sauvegardée:", data)
+        setAjoutArticle(false)
+        toast.success("Sauvegarde réussie !")
       },
       onError: (error) => {
         console.error("Erreur lors de la sauvegarde:", error)
+        toast.error(error.message || "Erreur lors de la sauvegarde de la demande", {
+          duration: 4000,
+          style: {
+            background: 'white',
+            color: '#ef4444',
+            fontWeight: 'bold',
+            border: '1px solid #ef4444'
+          }
+        })
       }
     })
   }
@@ -241,9 +301,19 @@ export default function DetailDemande() {
     updateDemandeWithJsonFileMutation.mutate(demandeUpdated, {
       onSuccess: () => {
         console.log("Statut changé:", nouveauStatut)
+        toast.success("Statut changé avec succès !")
       },
       onError: (error) => {
         console.error("Erreur lors du changement de statut:", error)
+        toast.error(error.message || "Erreur lors du changement de statut", {
+          duration: 4000,
+          style: {
+            background: 'white',
+            color: '#ef4444',
+            fontWeight: 'bold',
+            border: '1px solid #ef4444'
+          }
+        })
       }
     })
   }
@@ -287,28 +357,8 @@ export default function DetailDemande() {
     }
   }
 
-  const ajouterArticle = () => {
-    setAjoutArticle(true)
-  }
 
-  const validerArticle = () => {
-    const currentData = watch()
-    const nouvelArticle = {
-      description: currentData.items?.[currentData.items.length - 1]?.description || "",
-      service: currentData.items?.[currentData.items.length - 1]?.service || "",
-      budgetType: currentData.items?.[currentData.items.length - 1]?.budgetType || "B",
-      itemType: currentData.items?.[currentData.items.length - 1]?.itemType || null,
-      referenceDevis: currentData.items?.[currentData.items.length - 1]?.referenceDevis || undefined,
-      quantity: currentData.items?.[currentData.items.length - 1]?.quantity || 1,
-      unitPrice: currentData.items?.[currentData.items.length - 1]?.unitPrice || 0,
-      price: (currentData.items?.[currentData.items.length - 1]?.quantity || 1) * (currentData.items?.[currentData.items.length - 1]?.unitPrice || 0),
-    }
 
-    // Ajouter l'article à la liste
-    const updatedItems = [...(currentData.items || []), nouvelArticle]
-    setValue('items', updatedItems)
-    setAjoutArticle(false)
-  }
 
   const supprimerArticle = (index: number) => {
     const currentData = watch()
@@ -597,7 +647,10 @@ export default function DetailDemande() {
                 {(demande.status === PurchaseRequestStatus.BROUILLON || demande.status === PurchaseRequestStatus.A_MODIFIER) && (
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
-                      <Button className="bg-blue-600 hover:bg-blue-700">
+                      <Button
+                        className="bg-blue-600 hover:bg-blue-700"
+                        disabled={!demande.items || demande.items.length === 0}
+                      >
                         <CheckCircle className="h-4 w-4 mr-2" />
                         Soumettre
                       </Button>
@@ -613,7 +666,7 @@ export default function DetailDemande() {
                       <AlertDialogFooter>
                         <AlertDialogCancel>Annuler</AlertDialogCancel>
                         <AlertDialogAction onClick={() => gererChangementStatut(PurchaseRequestStatus.A_VERIFIER)}>
-                          Confirmer la soumission
+                          Envoyer la demande
                         </AlertDialogAction>
                       </AlertDialogFooter>
                     </AlertDialogContent>
@@ -625,8 +678,8 @@ export default function DetailDemande() {
         </div>
 
         {/* Titre */}
-        <div className="text-center">
-          <h1 className="text-3xl font-bold text-gray-900">DEMANDE D'ACHAT TRIO PYRENEES CAMBRE D'AZE</h1>
+        <div className="text-center py-8">
+          <h1 className="text-3xl font-bold text-gray-900">{`Demande d'achat Trio Pyrénées ${getStationName(demande.code)}`}</h1>
           <div className="flex items-center justify-center gap-2 mt-4">
             {getIconeStatut(demande.status)}
             <Badge variant="outline" className={getCouleurStatut(demande.status)}>
@@ -655,11 +708,7 @@ export default function DetailDemande() {
                       {...register("from")}
                       className={`mt-1 ${validationErrors.from ? 'border-red-500' : ''}`}
                       onBlur={(e) => validateField("from", e.target.value)}
-                      onChange={(e) => {
-                        if (validationErrors.from) {
-                          validateField("from", e.target.value)
-                        }
-                      }}
+                      onChange={(e) => validateField("from", e.target.value)}
                     />
                   ) : (
                     <p className="mt-1">{demande.from}</p>
@@ -680,15 +729,6 @@ export default function DetailDemande() {
                     <p className="text-gray-700 mt-1">{demande.description || "Aucune description"}</p>
                   )}
                 </div>
-                {/* <div>
-                  <Label className="text-sm font-medium">Statut</Label>
-                  <div className="flex items-center gap-2 mt-1">
-                    {getIconeStatut(demande.status)}
-                    <Badge variant="outline" className={getCouleurStatut(demande.status)}>
-                      {getLibelleStatut(demande.status)}
-                    </Badge>
-                  </div>
-                </div> */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <Label className="text-sm font-medium">Date de la demande</Label>
@@ -805,14 +845,13 @@ export default function DetailDemande() {
                           </TableCell>
                           <TableCell>
                             <Input
-                              placeholder="BudgetType"
+                              placeholder="BudgetType (ex: B29, B105, H)"
                               {...register(`items.${items.length}.budgetType`)}
                               className={validationErrors[`items.${items.length}.budgetType`] ? 'border-red-500' : ''}
-                              onBlur={(e) => validateField(`items.${items.length}.budgetType`, e.target.value)}
+                              onBlur={(e) => validateRegexField(`items.${items.length}.budgetType`, e.target.value, /^(B\d{1,4}|H)$/, "Le type de budget doit être 'H' ou correspondre au format 'B29', 'B105', etc.")}
                               onChange={(e) => {
-                                if (validationErrors[`items.${items.length}.budgetType`]) {
-                                  validateField(`items.${items.length}.budgetType`, e.target.value)
-                                }
+                                // Validation immédiate à chaque changement
+                                validateRegexField(`items.${items.length}.budgetType`, e.target.value, /^(B\d{1,4}|H)$/, "Le type de budget doit être 'H' ou correspondre au format 'B29', 'B105', etc.")
                               }}
                             />
                             {validationErrors[`items.${items.length}.budgetType`] && (
@@ -838,13 +877,27 @@ export default function DetailDemande() {
                           <TableCell>
                             <Input
                               type="number"
+                              min="0"
                               placeholder="1"
                               {...register(`items.${items.length}.quantity`, { valueAsNumber: true })}
                               className={validationErrors[`items.${items.length}.quantity`] ? 'border-red-500' : ''}
                               onBlur={(e) => validateField(`items.${items.length}.quantity`, Number(e.target.value))}
                               onChange={(e) => {
+                                let quantity = Number(e.target.value) || 0
+
+                                // Empêcher les valeurs négatives
+                                if (quantity < 0) {
+                                  quantity = 0
+                                  setValue(`items.${items.length}.quantity`, 0)
+                                }
+
+                                const unitPrice = watch(`items.${items.length}.unitPrice`) || 0
+                                const calculatedPrice = quantity * unitPrice
+
+                                setValue(`items.${items.length}.price`, calculatedPrice)
+
                                 if (validationErrors[`items.${items.length}.quantity`]) {
-                                  validateField(`items.${items.length}.quantity`, Number(e.target.value))
+                                  validateField(`items.${items.length}.quantity`, quantity)
                                 }
                               }}
                             />
@@ -855,14 +908,28 @@ export default function DetailDemande() {
                           <TableCell>
                             <Input
                               type="number"
+                              min="0"
                               step="0.01"
                               placeholder="0.00"
                               {...register(`items.${items.length}.unitPrice`, { valueAsNumber: true })}
                               className={validationErrors[`items.${items.length}.unitPrice`] ? 'border-red-500' : ''}
                               onBlur={(e) => validateField(`items.${items.length}.unitPrice`, Number(e.target.value))}
                               onChange={(e) => {
+                                let unitPrice = Number(e.target.value) || 0
+
+                                // Empêcher les valeurs négatives
+                                if (unitPrice < 0) {
+                                  unitPrice = 0
+                                  setValue(`items.${items.length}.unitPrice`, 0)
+                                }
+
+                                const quantity = watch(`items.${items.length}.quantity`) || 0
+                                const calculatedPrice = quantity * unitPrice
+
+                                setValue(`items.${items.length}.price`, calculatedPrice)
+
                                 if (validationErrors[`items.${items.length}.unitPrice`]) {
-                                  validateField(`items.${items.length}.unitPrice`, Number(e.target.value))
+                                  validateField(`items.${items.length}.unitPrice`, unitPrice)
                                 }
                               }}
                             />
@@ -871,7 +938,14 @@ export default function DetailDemande() {
                             )}
                           </TableCell>
                           <TableCell>
-                            {(watch(`items.${items.length}.quantity`) || 0) * (watch(`items.${items.length}.unitPrice`) || 0)} €
+                            <Input
+                              type="number"
+                              step="0.01"
+                              readOnly
+                              value={((watch(`items.${items.length}.quantity`) || 0) * (watch(`items.${items.length}.unitPrice`) || 0)).toFixed(2)}
+                              {...register(`items.${items.length}.price`, { valueAsNumber: true })}
+                              className="bg-gray-50"
+                            />
                           </TableCell>
                           <TableCell>
                             <Button size="sm" variant="outline" onClick={() => setAjoutArticle(false)}>
@@ -1384,6 +1458,13 @@ export default function DetailDemande() {
           </AlertDialogContent>
         </AlertDialog>
       </div>
+
+
+      <Toaster
+        // richColors
+        closeButton
+        position="bottom-right"
+      />
     </div>
   )
 }

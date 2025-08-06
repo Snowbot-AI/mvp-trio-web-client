@@ -13,7 +13,7 @@ export const demandeValidationSchema = z.object({
     emails: z.array(z.string().email("Format d'email invalide")).min(1, "Au moins un email est requis").optional(),
     siret: z.string().regex(/^\d{14}$/, "Le SIRET doit contenir 14 chiffres").optional()
   }).optional(),
-  
+
   // Livraison
   delivery: z.object({
     address: z.string().min(1, "L'adresse de livraison est requise").optional(),
@@ -22,7 +22,7 @@ export const demandeValidationSchema = z.object({
       "Format de téléphone invalide (ex: 06 12 34 56 78 ou +33 6 12 34 56 78)"
     ).optional()
   }).optional(),
-  
+
   // Fournisseur
   provider: z.object({
     name: z.string().min(1, "Le nom du fournisseur est requis").optional(),
@@ -33,16 +33,16 @@ export const demandeValidationSchema = z.object({
     ).nullable().optional(),
     email: z.string().email("Format d'email invalide").nullable().optional()
   }).optional(),
-  
+
   // Articles
   items: z.array(z.object({
     description: z.string().min(1, "La description est requise").optional(),
-    service: z.string().min(1, "Le service est requis").optional(),
+    service: z.string().min(1, "Le service est requis"),
     quantity: z.number().min(1, "La quantité doit être supérieure à 0").optional(),
     unitPrice: z.number().min(0, "Le prix unitaire doit être positif").optional(),
     price: z.number().min(0, "Le prix doit être positif").optional()
   })).min(1, "Au moins un article est requis").optional(),
-  
+
   // Totaux
   total: z.object({
     orderTotal: z.number().min(0, "Le total de commande doit être positif").optional(),
