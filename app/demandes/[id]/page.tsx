@@ -42,27 +42,33 @@ import {
   File,
   Trash2,
   Plus,
+  Archive,
 } from "lucide-react"
 import type { Demande, StatusDemande } from "../types"
-import { TrioService } from "../types"
+import { PurchaseRequestStatus, TrioService } from "../types"
 import { validateDemande } from "../validation-schema"
 import {
   setNestedField
 } from "../utils"
 import { useDemande, useUpdateDemande, useUpdateDemandeWithJsonFile } from "../hooks"
+import { Badge } from "@/components/ui/badge"
 
 
 export default function DetailDemande() {
   const router = useRouter()
   const params = useParams<{ id: string }>()
-  
+
   // Utilisation de TanStack Query pour récupérer les vraies données
   const { data: demande, isLoading, error } = useDemande(params.id)
   const updateDemandeMutation = useUpdateDemande()
   const updateDemandeWithJsonFileMutation = useUpdateDemandeWithJsonFile()
-  
+
   const [modeEdition, setModeEdition] = useState(false)
   const [ajoutArticle, setAjoutArticle] = useState(false)
+  const [showRejectDialog, setShowRejectDialog] = useState(false)
+  const [showMoreInfoDialog, setShowMoreInfoDialog] = useState(false)
+  const [rejectComment, setRejectComment] = useState("")
+  const [moreInfoComment, setMoreInfoComment] = useState("")
 
   // React Hook Form avec validation en temps réel
   const {
@@ -85,13 +91,13 @@ export default function DetailDemande() {
   const validateField = (fieldName: string, value: any) => {
     // Mettre à jour les données du formulaire
     setValue(fieldName as any, value, { shouldValidate: false })
-    
+
     // Récupérer les données actuelles du formulaire
     const currentData = watch()
-    
+
     // Construire l'objet à valider en mettant à jour le champ spécifique
     let dataToValidate = { ...currentData } as any
-    
+
     // Gérer les champs imbriqués (ex: billing.siret)
     if (fieldName.includes('.')) {
       const parts = fieldName.split('.')
@@ -106,7 +112,7 @@ export default function DetailDemande() {
     } else {
       dataToValidate[fieldName] = value
     }
-    
+
     const validation = validateDemande(dataToValidate)
     if (!validation.success) {
       const fieldErrors: Record<string, string> = {}
@@ -130,7 +136,7 @@ export default function DetailDemande() {
   const validateRegexField = (fieldName: string, value: string, regex: RegExp, errorMessage: string) => {
     // Mettre à jour les données du formulaire
     setValue(fieldName as any, value, { shouldValidate: false })
-    
+
     // Si le champ est vide, on ne valide pas (pas d'erreur)
     if (!value || value.trim() === '') {
       setValidationErrors(prev => {
@@ -140,7 +146,7 @@ export default function DetailDemande() {
       })
       return
     }
-    
+
     // Si le champ a une valeur, on valide avec la regex
     if (!regex.test(value)) {
       setValidationErrors(prev => ({ ...prev, [fieldName]: errorMessage }))
@@ -156,10 +162,10 @@ export default function DetailDemande() {
   // Fonction de validation pour les emails
   const validateEmailField = (fieldName: string, value: string) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    
+
     // Mettre à jour les données du formulaire
     setValue(fieldName as any, value, { shouldValidate: false })
-    
+
     // Si le champ est vide, on ne valide pas (pas d'erreur)
     if (!value || value.trim() === '') {
       setValidationErrors(prev => {
@@ -169,7 +175,7 @@ export default function DetailDemande() {
       })
       return
     }
-    
+
     // Si le champ a une valeur, on valide avec la regex
     if (!emailRegex.test(value)) {
       setValidationErrors(prev => ({ ...prev, [fieldName]: "Format d'email invalide" }))
@@ -202,11 +208,11 @@ export default function DetailDemande() {
   const gererSauvegarde = (data: Demande) => {
     // Nettoyer les erreurs de validation avant la sauvegarde
     clearValidationErrors()
-    
+
     // Extraire les fichiers uploadés
     const files = watch("files") || []
     const filesToUpload = files.filter((file: any) => file.file).map((file: any) => file.file)
-    
+
     // Utiliser l'approche avec fichier JSON (équivalente à curl)
     updateDemandeWithJsonFileMutation.mutate({ data, files: filesToUpload }, {
       onSuccess: () => {
@@ -229,7 +235,7 @@ export default function DetailDemande() {
   const gererChangementStatut = (nouveauStatut: StatusDemande) => {
     const currentData = watch()
     const demandeUpdated = { ...currentData, status: nouveauStatut }
-    
+
     // Utiliser l'approche avec fichier JSON pour le changement de statut
     // Pas de fichiers pour le changement de statut, juste les données
     updateDemandeWithJsonFileMutation.mutate(demandeUpdated, {
@@ -256,7 +262,7 @@ export default function DetailDemande() {
 
       const currentFiles = watch("files") || []
       const updatedFiles = [...currentFiles, ...nouveauxFichiers]
-      
+
       // Mettre à jour le formulaire
       const currentData = watch()
       reset({ ...currentData, files: updatedFiles })
@@ -266,7 +272,7 @@ export default function DetailDemande() {
   const gererSuppressionFichier = (idFichier: string) => {
     const currentFiles = watch("files") || []
     const updatedFiles = currentFiles.filter((f: any) => f.id !== idFichier)
-    
+
     // Mettre à jour le formulaire
     const currentData = watch()
     reset({ ...currentData, files: updatedFiles })
@@ -325,7 +331,7 @@ export default function DetailDemande() {
   if (error) {
     // Vérifier si c'est une erreur 404 (demande non trouvée)
     const isNotFound = error.message.includes('404') || error.message.includes('Failed to fetch demande')
-    
+
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -333,7 +339,7 @@ export default function DetailDemande() {
             {isNotFound ? 'Demande non trouvée' : 'Erreur'}
           </h2>
           <p className="text-gray-600 mb-4">
-            {isNotFound 
+            {isNotFound
               ? `La demande avec l'ID ${params.id} n'existe pas.`
               : `Impossible de charger la demande : ${error.message}`
             }
@@ -362,19 +368,206 @@ export default function DetailDemande() {
     )
   }
 
+  // Ajout de la fonction utilitaire pour le label du statut (à placer en haut du fichier ou importer si déjà présent)
+  const getLibelleStatut = (statut: PurchaseRequestStatus) => {
+    switch (statut) {
+      case PurchaseRequestStatus.BROUILLON:
+        return "Brouillon"
+      case PurchaseRequestStatus.A_VERIFIER:
+        return "À vérifier"
+      case PurchaseRequestStatus.A_MODIFIER:
+        return "À modifier"
+      case PurchaseRequestStatus.VALIDEE:
+        return "Validée"
+      case PurchaseRequestStatus.REJETEE:
+        return "Rejetée"
+      case PurchaseRequestStatus.EXPORTEE:
+        return "Exportée"
+      default:
+        return statut
+    }
+  }
+
+  // Ajout des fonctions utilitaires pour l'affichage du statut (après les imports)
+  const getIconeStatut = (statut: PurchaseRequestStatus) => {
+    switch (statut) {
+      case PurchaseRequestStatus.VALIDEE:
+        return <CheckCircle className="h-4 w-4 text-green-600" />
+      case PurchaseRequestStatus.REJETEE:
+        return <XCircle className="h-4 w-4 text-red-600" />
+      case PurchaseRequestStatus.A_VERIFIER:
+        return <Clock className="h-4 w-4 text-blue-600" />
+      case PurchaseRequestStatus.A_MODIFIER:
+        return <Edit className="h-4 w-4 text-orange-600" />
+      case PurchaseRequestStatus.EXPORTEE:
+        return <Archive className="h-4 w-4 text-purple-600" />
+      case PurchaseRequestStatus.BROUILLON:
+      default:
+        return <FileText className="h-4 w-4 text-gray-600" />
+    }
+  }
+
+  const getCouleurStatut = (statut: PurchaseRequestStatus) => {
+    switch (statut) {
+      case PurchaseRequestStatus.VALIDEE:
+        return "bg-green-100 text-green-800 border-green-200"
+      case PurchaseRequestStatus.REJETEE:
+        return "bg-red-100 text-red-800 border-red-200"
+      case PurchaseRequestStatus.A_VERIFIER:
+        return "bg-blue-100 text-blue-800 border-blue-200"
+      case PurchaseRequestStatus.A_MODIFIER:
+        return "bg-orange-100 text-orange-800 border-orange-200"
+      case PurchaseRequestStatus.EXPORTEE:
+        return "bg-purple-100 text-purple-800 border-purple-200"
+      case PurchaseRequestStatus.BROUILLON:
+      default:
+        return "bg-gray-100 text-gray-800 border-gray-200"
+    }
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 p-6 pt-8">
       <div className="max-w-7xl mx-auto space-y-6">
-        {/* En-tête */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-8">
+        {/* Header en haut */}
+        <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Button variant="outline" onClick={() => router.push("/")}>
               <ArrowLeft className="h-4 w-4 mr-2" />
               Retour
             </Button>
           </div>
-          <h1 className="text-3xl font-bold text-gray-900 text-center sm:text-left py-8">DEMANDE D'ACHAT TRIO PYRENEES CAMBRE D'AZE</h1>
-          <div className="flex items-center gap-2 justify-center sm:justify-end">
+          <div className="flex items-center gap-4">
+            {/* Actions selon le statut */}
+            {!modeEdition && demande.status === PurchaseRequestStatus.A_VERIFIER && (
+              <div className="flex items-center gap-2">
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button className="bg-green-600 hover:bg-green-700">
+                      <CheckCircle className="h-4 w-4 mr-2" />
+                      Approuver
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Approuver la demande</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Êtes-vous sûr de vouloir approuver cette demande d'achat ? Cette action ne peut pas être
+                        annulée.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Annuler</AlertDialogCancel>
+                      <AlertDialogAction onClick={() => gererChangementStatut(PurchaseRequestStatus.VALIDEE)}>
+                        Confirmer l'approbation
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+
+                <AlertDialog open={showRejectDialog} onOpenChange={setShowRejectDialog}>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="destructive">
+                      <XCircle className="h-4 w-4 mr-2" />
+                      Rejeter
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Rejeter la demande</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Êtes-vous sûr de vouloir rejeter cette demande d'achat ? Cette action ne peut pas être
+                        annulée. Si oui veuillez préciser la raison du rejet.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <div className="py-4">
+                      <Label htmlFor="reject-comment" className="text-sm font-medium">
+                        Commentaire obligatoire *
+                      </Label>
+                      <Textarea
+                        id="reject-comment"
+                        value={rejectComment}
+                        onChange={(e) => setRejectComment(e.target.value)}
+                        placeholder="Veuillez expliquer la raison du rejet..."
+                        rows={3}
+                        className="mt-1"
+                      />
+                    </div>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel onClick={() => {
+                        setShowRejectDialog(false)
+                        setRejectComment("")
+                      }}>
+                        Annuler
+                      </AlertDialogCancel>
+                      <AlertDialogAction
+                        className="bg-red-600 hover:bg-red-700"
+                        onClick={() => {
+                          if (rejectComment.trim()) {
+                            gererChangementStatut(PurchaseRequestStatus.REJETEE)
+                            setShowRejectDialog(false)
+                            setRejectComment("")
+                          }
+                        }}
+                        disabled={!rejectComment.trim()}
+                      >
+                        Confirmer le rejet
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+
+                <AlertDialog open={showMoreInfoDialog} onOpenChange={setShowMoreInfoDialog}>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="outline">
+                      <Clock className="h-4 w-4 mr-2" />
+                      Demander plus d'info
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Demander plus d'informations</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Êtes-vous sûr de vouloir demander plus d'informations sur cette demande d'achat ? Si oui veuillez préciser quelles informations supplémentaires sont nécessaires.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <div className="py-4">
+                      <Label htmlFor="more-info-comment" className="text-sm font-medium">
+                        Commentaire obligatoire *
+                      </Label>
+                      <Textarea
+                        id="more-info-comment"
+                        value={moreInfoComment}
+                        onChange={(e) => setMoreInfoComment(e.target.value)}
+                        placeholder="Veuillez préciser quelles informations supplémentaires sont nécessaires..."
+                        rows={3}
+                        className="mt-1"
+                      />
+                    </div>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel onClick={() => {
+                        setShowMoreInfoDialog(false)
+                        setMoreInfoComment("")
+                      }}>
+                        Annuler
+                      </AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={() => {
+                          if (moreInfoComment.trim()) {
+                            gererChangementStatut(PurchaseRequestStatus.A_MODIFIER)
+                            setShowMoreInfoDialog(false)
+                            setMoreInfoComment("")
+                          }
+                        }}
+                        disabled={!moreInfoComment.trim()}
+                      >
+                        Confirmer la demande
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
+            )}
+
             {modeEdition ? (
               <>
                 <Button variant="outline" onClick={gererAnnulation}>
@@ -382,26 +575,67 @@ export default function DetailDemande() {
                   Annuler
                 </Button>
 
-                <Button 
+                <Button
                   onClick={handleSubmit(gererSauvegarde)}
                   disabled={updateDemandeWithJsonFileMutation.isPending || Object.keys(validationErrors).length > 0}
                   className={Object.keys(validationErrors).length > 0 ? 'bg-red-500 hover:bg-red-600' : ''}
                 >
                   <Save className="h-4 w-4 mr-2" />
-                  {updateDemandeWithJsonFileMutation.isPending ? 'Sauvegarde...' : 
-                   Object.keys(validationErrors).length > 0 ? 'Erreurs de validation' : 'Sauvegarder'}
+                  {updateDemandeWithJsonFileMutation.isPending ? 'Sauvegarde...' :
+                    Object.keys(validationErrors).length > 0 ? 'Erreurs de validation' : 'Sauvegarder'}
                 </Button>
               </>
             ) : (
-              <Button onClick={() => setModeEdition(true)}>
-                <Edit className="h-4 w-4 mr-2" />
-                Modifier
-              </Button>
+              <div className="flex items-center gap-2">
+                {demande.status !== PurchaseRequestStatus.A_VERIFIER && (
+                  <Button onClick={() => setModeEdition(true)}>
+                    <Edit className="h-4 w-4 mr-2" />
+                    Modifier
+                  </Button>
+                )}
+
+                {(demande.status === PurchaseRequestStatus.BROUILLON || demande.status === PurchaseRequestStatus.A_MODIFIER) && (
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button className="bg-blue-600 hover:bg-blue-700">
+                        <CheckCircle className="h-4 w-4 mr-2" />
+                        Soumettre
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Soumettre la demande</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Êtes-vous sûr de vouloir soumettre cette demande d'achat pour validation ? Cette action ne peut pas être
+                          annulée.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Annuler</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => gererChangementStatut(PurchaseRequestStatus.A_VERIFIER)}>
+                          Confirmer la soumission
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                )}
+              </div>
             )}
           </div>
         </div>
 
+        {/* Titre */}
+        <div className="text-center">
+          <h1 className="text-3xl font-bold text-gray-900">DEMANDE D'ACHAT TRIO PYRENEES CAMBRE D'AZE</h1>
+          <div className="flex items-center justify-center gap-2 mt-4">
+            {getIconeStatut(demande.status)}
+            <Badge variant="outline" className={getCouleurStatut(demande.status)}>
+              {getLibelleStatut(demande.status)}
+            </Badge>
+          </div>
+        </div>
 
+        {/* Contenu principal - Cartes */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Colonne principale */}
           <div className="lg:col-span-2 space-y-6">
@@ -414,12 +648,52 @@ export default function DetailDemande() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
+                <div>
+                  <Label className="text-sm font-medium">Demandeur *</Label>
+                  {modeEdition ? (
+                    <Input
+                      {...register("from")}
+                      className={`mt-1 ${validationErrors.from ? 'border-red-500' : ''}`}
+                      onBlur={(e) => validateField("from", e.target.value)}
+                      onChange={(e) => {
+                        if (validationErrors.from) {
+                          validateField("from", e.target.value)
+                        }
+                      }}
+                    />
+                  ) : (
+                    <p className="mt-1">{demande.from}</p>
+                  )}
+                  {validationErrors.from && (
+                    <p className="text-red-500 text-sm mt-1">{validationErrors.from}</p>
+                  )}
+                </div>
+                <div>
+                  <Label className="text-sm font-medium">Description</Label>
+                  {modeEdition ? (
+                    <Textarea
+                      {...register("description")}
+                      rows={3}
+                      className="mt-1"
+                    />
+                  ) : (
+                    <p className="text-gray-700 mt-1">{demande.description || "Aucune description"}</p>
+                  )}
+                </div>
+                {/* <div>
+                  <Label className="text-sm font-medium">Statut</Label>
+                  <div className="flex items-center gap-2 mt-1">
+                    {getIconeStatut(demande.status)}
+                    <Badge variant="outline" className={getCouleurStatut(demande.status)}>
+                      {getLibelleStatut(demande.status)}
+                    </Badge>
+                  </div>
+                </div> */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <Label className="text-sm font-medium">Date de la demande</Label>
                     <p className="mt-1">{new Date(demande.date).toLocaleDateString("fr-FR")}</p>
                   </div>
-
                   <div>
                     <Label className="text-sm font-medium">Date de livraison souhaitée</Label>
                     {modeEdition ? (
@@ -432,43 +706,11 @@ export default function DetailDemande() {
                       <p className="mt-1">{demande.deliveryDate ? new Date(demande.deliveryDate).toLocaleDateString("fr-FR") : "Non spécifié"}</p>
                     )}
                   </div>
-
-                  <div>
-                    <Label className="text-sm font-medium">Demandeur *</Label>
-                    {modeEdition ? (
-                      <Input
-                        {...register("from")}
-                        className={`mt-1 ${validationErrors.from ? 'border-red-500' : ''}`}
-                        onBlur={(e) => validateField("from", e.target.value)}
-                        onChange={(e) => {
-                          if (validationErrors.from) {
-                            validateField("from", e.target.value)
-                          }
-                        }}
-                      />
-                    ) : (
-                      <p className="mt-1">{demande.from}</p>
-                    )}
-                    {validationErrors.from && (
-                      <p className="text-red-500 text-sm mt-1">{validationErrors.from}</p>
-                    )}
-                  </div>
                 </div>
 
 
 
-                <div>
-                  <Label className="text-sm font-medium">Description</Label>
-                  {modeEdition ? (
-                    <Textarea
-                      {...register("comment")}
-                      rows={3}
-                      className="mt-1"
-                    />
-                  ) : (
-                    <p className="text-gray-700 mt-1">{demande.comment || "Aucune description"}</p>
-                  )}
-                </div>
+
               </CardContent>
             </Card>
 
@@ -490,158 +732,158 @@ export default function DetailDemande() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Service</TableHead>
-                      <TableHead>BudgetType</TableHead>
-                      <TableHead>Désignation</TableHead>
-                      <TableHead>Qté</TableHead>
-                      <TableHead>Prix unit.</TableHead>
-                      <TableHead>Montant</TableHead>
-                      {modeEdition && <TableHead>Actions</TableHead>}
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {items.map((article, index) => (
-                      <TableRow key={article.id}>
-                        <TableCell>{article.service}</TableCell>
-                        <TableCell>{article.budgetType}</TableCell>
-                        <TableCell>{article.description}</TableCell>
-                        <TableCell>{article.quantity}</TableCell>
-                        <TableCell>{article.unitPrice ? article.unitPrice.toFixed(2) : '0.00'} €</TableCell>
-                        <TableCell className="font-medium">{article.price ? article.price.toFixed(2) : '0.00'} €</TableCell>
-                        {modeEdition && (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Service</TableHead>
+                        <TableHead>BudgetType</TableHead>
+                        <TableHead>Désignation</TableHead>
+                        <TableHead>Qté</TableHead>
+                        <TableHead>Prix unit.</TableHead>
+                        <TableHead>Montant</TableHead>
+                        {modeEdition && <TableHead>Actions</TableHead>}
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {items.map((article, index) => (
+                        <TableRow key={article.id}>
+                          <TableCell>{article.service}</TableCell>
+                          <TableCell>{article.budgetType}</TableCell>
+                          <TableCell>{article.description}</TableCell>
+                          <TableCell>{article.quantity}</TableCell>
+                          <TableCell>{article.unitPrice ? article.unitPrice.toFixed(2) : '0.00'} €</TableCell>
+                          <TableCell className="font-medium">{article.price ? article.price.toFixed(2) : '0.00'} €</TableCell>
+                          {modeEdition && (
+                            <TableCell>
+                              <Button size="sm" variant="destructive" onClick={() => supprimerArticle(index)}>
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </TableCell>
+                          )}
+                        </TableRow>
+                      ))}
+
+                      {ajoutArticle && (
+                        <TableRow>
                           <TableCell>
-                            <Button size="sm" variant="destructive" onClick={() => supprimerArticle(index)}>
-                              <Trash2 className="h-4 w-4" />
+                            <Select
+                              onValueChange={(value) => {
+                                setValue(`items.${items.length}.service`, value)
+                                validateField(`items.${items.length}.service`, value)
+                              }}
+                            >
+                              <SelectTrigger className={validationErrors[`items.${items.length}.service`] ? 'border-red-500' : ''}>
+                                <SelectValue placeholder="Sélectionner un service" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {Object.entries(TrioService).map(([key, value]) => {
+                                  const labels: Record<string, string> = {
+                                    ACC: 'Accueil',
+                                    ADM: 'Admin',
+                                    BAT: 'Bâtiment',
+                                    BIL: 'Billetterie',
+                                    COM: 'Communication commerciale',
+                                    DAM: 'Dammage',
+                                    PAR: 'Parc de roulage',
+                                    PIS: 'Pistes',
+                                    REST: 'Restaurant',
+                                    RM: 'Remontée mécanique',
+                                    USI: 'Snowmaker (Usine à neige)',
+                                    AUT: 'Autre'
+                                  }
+                                  return (
+                                    <SelectItem key={key} value={value}>
+                                      {key} - {labels[key]}
+                                    </SelectItem>
+                                  )
+                                })}
+                              </SelectContent>
+                            </Select>
+                            {validationErrors[`items.${items.length}.service`] && (
+                              <p className="text-red-500 text-xs mt-1">{validationErrors[`items.${items.length}.service`]}</p>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <Input
+                              placeholder="BudgetType"
+                              {...register(`items.${items.length}.budgetType`)}
+                              className={validationErrors[`items.${items.length}.budgetType`] ? 'border-red-500' : ''}
+                              onBlur={(e) => validateField(`items.${items.length}.budgetType`, e.target.value)}
+                              onChange={(e) => {
+                                if (validationErrors[`items.${items.length}.budgetType`]) {
+                                  validateField(`items.${items.length}.budgetType`, e.target.value)
+                                }
+                              }}
+                            />
+                            {validationErrors[`items.${items.length}.budgetType`] && (
+                              <p className="text-red-500 text-xs mt-1">{validationErrors[`items.${items.length}.budgetType`]}</p>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <Input
+                              placeholder="Désignation"
+                              {...register(`items.${items.length}.description`)}
+                              className={validationErrors[`items.${items.length}.description`] ? 'border-red-500' : ''}
+                              onBlur={(e) => validateField(`items.${items.length}.description`, e.target.value)}
+                              onChange={(e) => {
+                                if (validationErrors[`items.${items.length}.description`]) {
+                                  validateField(`items.${items.length}.description`, e.target.value)
+                                }
+                              }}
+                            />
+                            {validationErrors[`items.${items.length}.description`] && (
+                              <p className="text-red-500 text-xs mt-1">{validationErrors[`items.${items.length}.description`]}</p>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <Input
+                              type="number"
+                              placeholder="1"
+                              {...register(`items.${items.length}.quantity`, { valueAsNumber: true })}
+                              className={validationErrors[`items.${items.length}.quantity`] ? 'border-red-500' : ''}
+                              onBlur={(e) => validateField(`items.${items.length}.quantity`, Number(e.target.value))}
+                              onChange={(e) => {
+                                if (validationErrors[`items.${items.length}.quantity`]) {
+                                  validateField(`items.${items.length}.quantity`, Number(e.target.value))
+                                }
+                              }}
+                            />
+                            {validationErrors[`items.${items.length}.quantity`] && (
+                              <p className="text-red-500 text-xs mt-1">{validationErrors[`items.${items.length}.quantity`]}</p>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <Input
+                              type="number"
+                              step="0.01"
+                              placeholder="0.00"
+                              {...register(`items.${items.length}.unitPrice`, { valueAsNumber: true })}
+                              className={validationErrors[`items.${items.length}.unitPrice`] ? 'border-red-500' : ''}
+                              onBlur={(e) => validateField(`items.${items.length}.unitPrice`, Number(e.target.value))}
+                              onChange={(e) => {
+                                if (validationErrors[`items.${items.length}.unitPrice`]) {
+                                  validateField(`items.${items.length}.unitPrice`, Number(e.target.value))
+                                }
+                              }}
+                            />
+                            {validationErrors[`items.${items.length}.unitPrice`] && (
+                              <p className="text-red-500 text-xs mt-1">{validationErrors[`items.${items.length}.unitPrice`]}</p>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            {(watch(`items.${items.length}.quantity`) || 0) * (watch(`items.${items.length}.unitPrice`) || 0)} €
+                          </TableCell>
+                          <TableCell>
+                            <Button size="sm" variant="outline" onClick={() => setAjoutArticle(false)}>
+                              <X className="h-4 w-4" />
                             </Button>
                           </TableCell>
-                        )}
-                      </TableRow>
-                    ))}
-
-                    {ajoutArticle && (
-                      <TableRow>
-                        <TableCell>
-                          <Select
-                            onValueChange={(value) => {
-                              setValue(`items.${items.length}.service`, value)
-                              validateField(`items.${items.length}.service`, value)
-                            }}
-                          >
-                            <SelectTrigger className={validationErrors[`items.${items.length}.service`] ? 'border-red-500' : ''}>
-                              <SelectValue placeholder="Sélectionner un service" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {Object.entries(TrioService).map(([key, value]) => {
-                                const labels: Record<string, string> = {
-                                  ACC: 'Accueil',
-                                  ADM: 'Admin',
-                                  BAT: 'Bâtiment',
-                                  BIL: 'Billetterie',
-                                  COM: 'Communication commerciale',
-                                  DAM: 'Dammage',
-                                  PAR: 'Parc de roulage',
-                                  PIS: 'Pistes',
-                                  REST: 'Restaurant',
-                                  RM: 'Remontée mécanique',
-                                  USI: 'Snowmaker (Usine à neige)',
-                                  AUT: 'Autre'
-                                }
-                                return (
-                                  <SelectItem key={key} value={value}>
-                                    {key} - {labels[key]}
-                                  </SelectItem>
-                                )
-                              })}
-                            </SelectContent>
-                          </Select>
-                          {validationErrors[`items.${items.length}.service`] && (
-                            <p className="text-red-500 text-xs mt-1">{validationErrors[`items.${items.length}.service`]}</p>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          <Input
-                            placeholder="BudgetType"
-                            {...register(`items.${items.length}.budgetType`)}
-                            className={validationErrors[`items.${items.length}.budgetType`] ? 'border-red-500' : ''}
-                            onBlur={(e) => validateField(`items.${items.length}.budgetType`, e.target.value)}
-                            onChange={(e) => {
-                              if (validationErrors[`items.${items.length}.budgetType`]) {
-                                validateField(`items.${items.length}.budgetType`, e.target.value)
-                              }
-                            }}
-                          />
-                          {validationErrors[`items.${items.length}.budgetType`] && (
-                            <p className="text-red-500 text-xs mt-1">{validationErrors[`items.${items.length}.budgetType`]}</p>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          <Input
-                            placeholder="Désignation"
-                            {...register(`items.${items.length}.description`)}
-                            className={validationErrors[`items.${items.length}.description`] ? 'border-red-500' : ''}
-                            onBlur={(e) => validateField(`items.${items.length}.description`, e.target.value)}
-                            onChange={(e) => {
-                              if (validationErrors[`items.${items.length}.description`]) {
-                                validateField(`items.${items.length}.description`, e.target.value)
-                              }
-                            }}
-                          />
-                          {validationErrors[`items.${items.length}.description`] && (
-                            <p className="text-red-500 text-xs mt-1">{validationErrors[`items.${items.length}.description`]}</p>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          <Input
-                            type="number"
-                            placeholder="1"
-                            {...register(`items.${items.length}.quantity`, { valueAsNumber: true })}
-                            className={validationErrors[`items.${items.length}.quantity`] ? 'border-red-500' : ''}
-                            onBlur={(e) => validateField(`items.${items.length}.quantity`, Number(e.target.value))}
-                            onChange={(e) => {
-                              if (validationErrors[`items.${items.length}.quantity`]) {
-                                validateField(`items.${items.length}.quantity`, Number(e.target.value))
-                              }
-                            }}
-                          />
-                          {validationErrors[`items.${items.length}.quantity`] && (
-                            <p className="text-red-500 text-xs mt-1">{validationErrors[`items.${items.length}.quantity`]}</p>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          <Input
-                            type="number"
-                            step="0.01"
-                            placeholder="0.00"
-                            {...register(`items.${items.length}.unitPrice`, { valueAsNumber: true })}
-                            className={validationErrors[`items.${items.length}.unitPrice`] ? 'border-red-500' : ''}
-                            onBlur={(e) => validateField(`items.${items.length}.unitPrice`, Number(e.target.value))}
-                            onChange={(e) => {
-                              if (validationErrors[`items.${items.length}.unitPrice`]) {
-                                validateField(`items.${items.length}.unitPrice`, Number(e.target.value))
-                              }
-                            }}
-                          />
-                          {validationErrors[`items.${items.length}.unitPrice`] && (
-                            <p className="text-red-500 text-xs mt-1">{validationErrors[`items.${items.length}.unitPrice`]}</p>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          {(watch(`items.${items.length}.quantity`) || 0) * (watch(`items.${items.length}.unitPrice`) || 0)} €
-                        </TableCell>
-                        <TableCell>
-                          <Button size="sm" variant="outline" onClick={() => setAjoutArticle(false)}>
-                            <X className="h-4 w-4" />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
+                        </TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
             </div>
 
             {/* Informations de facturation */}
@@ -773,7 +1015,7 @@ export default function DetailDemande() {
                     )}
                   </div>
 
-                  
+
                 </div>
 
                 <div>
@@ -818,27 +1060,27 @@ export default function DetailDemande() {
                     <p className="text-red-500 text-sm mt-1">{validationErrors['provider.email']}</p>
                   )}
                 </div>
-                
+
                 <div>
-                    <Label className="text-sm font-medium">Téléphone</Label>
-                    {modeEdition ? (
-                      <Input
-                        {...register("provider.tel")}
-                        placeholder="06 12 34 56 78"
-                        className={`mt-1 ${validationErrors['provider.tel'] ? 'border-red-500' : ''}`}
-                        onBlur={(e) => validateRegexField("provider.tel", e.target.value, /^(?:(?:\+|00)33|0)\s*[1-9](?:[\s.-]*\d{2}){4}$/, "Format de téléphone invalide")}
-                        onChange={(e) => {
-                          // Validation immédiate à chaque changement
-                          validateRegexField("provider.tel", e.target.value, /^(?:(?:\+|00)33|0)\s*[1-9](?:[\s.-]*\d{2}){4}$/, "Format de téléphone invalide")
-                        }}
-                      />
-                    ) : (
-                      <p className="mt-1">{demande.provider.tel || "Non spécifié"}</p>
-                    )}
-                    {validationErrors['provider.tel'] && (
-                      <p className="text-red-500 text-sm mt-1">{validationErrors['provider.tel']}</p>
-                    )}
-                  </div>
+                  <Label className="text-sm font-medium">Téléphone</Label>
+                  {modeEdition ? (
+                    <Input
+                      {...register("provider.tel")}
+                      placeholder="06 12 34 56 78"
+                      className={`mt-1 ${validationErrors['provider.tel'] ? 'border-red-500' : ''}`}
+                      onBlur={(e) => validateRegexField("provider.tel", e.target.value, /^(?:(?:\+|00)33|0)\s*[1-9](?:[\s.-]*\d{2}){4}$/, "Format de téléphone invalide")}
+                      onChange={(e) => {
+                        // Validation immédiate à chaque changement
+                        validateRegexField("provider.tel", e.target.value, /^(?:(?:\+|00)33|0)\s*[1-9](?:[\s.-]*\d{2}){4}$/, "Format de téléphone invalide (ex: 06 12 34 56 78 ou +33 6 12 34 56 78)")
+                      }}
+                    />
+                  ) : (
+                    <p className="mt-1">{demande.provider.tel || "Non spécifié"}</p>
+                  )}
+                  {validationErrors['provider.tel'] && (
+                    <p className="text-red-500 text-sm mt-1">{validationErrors['provider.tel']}</p>
+                  )}
+                </div>
               </CardContent>
             </Card>
 
@@ -876,16 +1118,16 @@ export default function DetailDemande() {
                 <div>
                   <Label className="text-sm font-medium">Téléphone de livraison *</Label>
                   {modeEdition ? (
-                                          <Input
-                        {...register("delivery.tel")}
-                        placeholder="06 12 34 56 78"
-                        className={`mt-1 ${validationErrors['delivery.tel'] ? 'border-red-500' : ''}`}
-                        onBlur={(e) => validateRegexField("delivery.tel", e.target.value, /^(?:(?:\+|00)33|0)\s*[1-9](?:[\s.-]*\d{2}){4}$/, "Format de téléphone invalide (ex: 06 12 34 56 78 ou +33 6 12 34 56 78)")}
-                        onChange={(e) => {
-                          // Validation immédiate à chaque changement
-                          validateRegexField("delivery.tel", e.target.value, /^(?:(?:\+|00)33|0)\s*[1-9](?:[\s.-]*\d{2}){4}$/, "Format de téléphone invalide (ex: 06 12 34 56 78 ou +33 6 12 34 56 78)")
-                        }}
-                      />
+                    <Input
+                      {...register("delivery.tel")}
+                      placeholder="06 12 34 56 78"
+                      className={`mt-1 ${validationErrors['delivery.tel'] ? 'border-red-500' : ''}`}
+                      onBlur={(e) => validateRegexField("delivery.tel", e.target.value, /^(?:(?:\+|00)33|0)\s*[1-9](?:[\s.-]*\d{2}){4}$/, "Format de téléphone invalide (ex: 06 12 34 56 78 ou +33 6 12 34 56 78)")}
+                      onChange={(e) => {
+                        // Validation immédiate à chaque changement
+                        validateRegexField("delivery.tel", e.target.value, /^(?:(?:\+|00)33|0)\s*[1-9](?:[\s.-]*\d{2}){4}$/, "Format de téléphone invalide (ex: 06 12 34 56 78 ou +33 6 12 34 56 78)")
+                      }}
+                    />
                   ) : (
                     <p className="mt-1">{demande.delivery.tel}</p>
                   )}
@@ -946,9 +1188,9 @@ export default function DetailDemande() {
                           Télécharger
                         </Button>
                         {modeEdition && (
-                          <Button 
-                            size="sm" 
-                            variant="destructive" 
+                          <Button
+                            size="sm"
+                            variant="destructive"
                             onClick={() => setFichierASupprimer({ id: fichier.id, name: fichier.name })}
                           >
                             <Trash2 className="h-4 w-4" />
@@ -1015,9 +1257,9 @@ export default function DetailDemande() {
                           Télécharger
                         </Button>
                         {modeEdition && (
-                          <Button 
-                            size="sm" 
-                            variant="destructive" 
+                          <Button
+                            size="sm"
+                            variant="destructive"
                             onClick={() => setFichierASupprimer({ id: fichier.id, name: fichier.name })}
                           >
                             <Trash2 className="h-4 w-4" />
@@ -1111,71 +1353,12 @@ export default function DetailDemande() {
                 </CardContent>
               </Card>
             )}
+
+
           </div>
         </div>
 
-        {/* Actions d'approbation/rejet/examen */}
-        {demande.status === "EN_ATTENTE_VALIDATION" && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Actions</CardTitle>
-            </CardHeader>
-            <CardContent className="flex gap-4">
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button className="bg-green-600 hover:bg-green-700">
-                  <CheckCircle className="h-4 w-4 mr-2" />
-                  Approuver
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Approuver la demande</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Êtes-vous sûr de vouloir approuver cette demande d'achat ? Cette action ne peut pas être
-                    annulée.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Annuler</AlertDialogCancel>
-                  <AlertDialogAction onClick={() => gererChangementStatut("VALIDE")}>
-                    Confirmer l&aposapprobation
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
 
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button variant="destructive">
-                  <XCircle className="h-4 w-4 mr-2" />
-                  Rejeter
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Rejeter la demande</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Êtes-vous sûr de vouloir rejeter cette demande d&aposachat ? Cette action ne peut pas être
-                    annulée.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Annuler</AlertDialogCancel>
-                  <AlertDialogAction onClick={() => gererChangementStatut("REJETE")}>
-                    Confirmer le rejet
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-
-            <Button variant="outline" onClick={() => gererChangementStatut("EN_ATTENTE_DE_PLUS_D_INFO")}>
-              <Clock className="h-4 w-4 mr-2" />
-              Mettre en examen
-            </Button>
-            </CardContent>
-          </Card>
-        )}
 
         {/* Popup de confirmation pour la suppression de fichiers */}
         <AlertDialog open={!!fichierASupprimer} onOpenChange={(open) => !open && setFichierASupprimer(null)}>
@@ -1183,7 +1366,7 @@ export default function DetailDemande() {
             <AlertDialogHeader>
               <AlertDialogTitle>Supprimer le fichier</AlertDialogTitle>
               <AlertDialogDescription>
-                Êtes-vous sûr de vouloir supprimer le fichier &quot;{fichierASupprimer?.name}&quot; ? 
+                Êtes-vous sûr de vouloir supprimer le fichier &quot;{fichierASupprimer?.name}&quot; ?
                 Cette action ne peut pas être annulée.
               </AlertDialogDescription>
             </AlertDialogHeader>
@@ -1191,7 +1374,7 @@ export default function DetailDemande() {
               <AlertDialogCancel onClick={() => setFichierASupprimer(null)}>
                 Annuler
               </AlertDialogCancel>
-              <AlertDialogAction 
+              <AlertDialogAction
                 onClick={confirmerSuppressionFichier}
                 className="bg-red-600 hover:bg-red-700"
               >

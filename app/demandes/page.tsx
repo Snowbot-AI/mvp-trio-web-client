@@ -23,7 +23,7 @@ import { Search, Eye, CheckCircle, XCircle, Clock, AlertCircle, Plus, Loader2, F
 import { Textarea } from "@/components/ui/textarea"
 import { useRouter } from "next/navigation"
 import { buildApiUrl, API_CONFIG } from "../../lib/api-config"
-import { Demande, PurchaseRequestStatus } from "./types"
+import { Demande, getStationName, PurchaseRequestStatus } from "./types"
 import { DemandeSchema } from "./schema"
 import { useDemandes } from "./hooks"
 
@@ -142,7 +142,7 @@ export default function DemandesPage() {
   const [formulaireOuvert, setFormulaireOuvert] = useState(false)
   const [nouvelleDemande, setNouvelleDemande] = useState({
     name: "",
-    comment: "",
+    description: "",
     total: 0,
     service: "",
     priority: "LOW" as const,
@@ -191,7 +191,7 @@ export default function DemandesPage() {
     // Réinitialiser le formulaire
     setNouvelleDemande({
       name: "",
-      comment: "",
+      description: "",
       total: 0,
       service: "",
       priority: "LOW",
@@ -363,14 +363,14 @@ export default function DemandesPage() {
                    </div>
 
                    <div className="md:col-span-2">
-                     <Label htmlFor="comment" className="text-sm font-medium">
-                       Commentaire
+                     <Label htmlFor="description" className="text-sm font-medium">
+                       Description
                      </Label>
                      <Textarea
-                       id="comment"
-                       value={nouvelleDemande.comment}
-                       onChange={(e) => gererChangementChamp("comment", e.target.value)}
-                       placeholder="Commentaires additionnels sur la demande..."
+                       id="description"
+                       value={nouvelleDemande.description}
+                       onChange={(e) => gererChangementChamp("description", e.target.value)}
+                       placeholder="Description de la demande..."
                        rows={4}
                        className="mt-1"
                      />
@@ -526,7 +526,7 @@ export default function DemandesPage() {
                    <TableHead>Demandeur</TableHead>
                    <TableHead>Date</TableHead>
                    <TableHead>Département</TableHead>
-                   <TableHead>Commentaire</TableHead>
+                   <TableHead>Description</TableHead>
                    <TableHead>Montant</TableHead>
                    <TableHead>Statut</TableHead>
                  </TableRow>
@@ -538,11 +538,11 @@ export default function DemandesPage() {
                      className="cursor-pointer hover:bg-gray-50 transition-colors"
                      onClick={() => dem.id && router.push(`/demandes/${dem.id}`)}
                    >
-                                           <TableCell className="font-medium">{dem.from || 'N/A'}</TableCell>
+                      <TableCell className="font-medium">{dem.from || 'N/A'}</TableCell>
                       <TableCell>{dem.date ? new Date(dem.date).toLocaleDateString("fr-FR") : 'N/A'}</TableCell>
-                      <TableCell>{dem.from || 'N/A'}</TableCell>
-                      <TableCell className="max-w-xs truncate" title={dem.comment || ''}>
-                        {dem.comment || 'Aucun commentaire'}
+                      <TableCell>{getStationName(dem.code) || 'N/A'}</TableCell>
+                      <TableCell className="max-w-xs truncate" title={dem.description || ''}>
+                        {dem.description || 'Aucune description'}
                       </TableCell>
                       <TableCell>{(dem.total.total || 0).toLocaleString()} €</TableCell>
                       <TableCell>

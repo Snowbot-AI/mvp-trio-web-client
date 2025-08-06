@@ -5,7 +5,7 @@ export const demandeValidationSchema = z.object({
   // Champs obligatoires
   from: z.string().min(1, "Le demandeur est requis").optional(),
   date: z.string().min(1, "La date est requise").optional(),
-  
+  description: z.string().optional(),
   // Facturation
   billing: z.object({
     name: z.string().min(1, "Le nom de facturation est requis").optional(),

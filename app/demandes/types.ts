@@ -66,6 +66,60 @@ export enum TrioService {
 }
 
 /**
+ * Enum des codes de station Trio
+ */
+export enum CodeResort {
+  /**
+   * 00 for 'Siège'.
+   */
+  CODE_00 = "00",
+
+  /**
+   * 06 for 'Cambre'.
+   */
+  CODE_06 = "06",
+
+  /**
+   * 07 for 'Porté-Puymorens'.
+   */
+  CODE_07 = "07",
+
+  /**
+   * 08 for 'Formiguères'.
+   */
+  CODE_08 = "08",
+
+  /**
+   * 999 for 'Restauration' - to be determined
+   */
+  CODE_999 = "999"
+}
+
+/**
+ * Convertit un code de station en nom de station
+ * @param code - Le code de la station (ex: "00", "06", etc.)
+ * @returns Le nom de la station correspondante
+ */
+export function getStationName(code: string): string {
+  switch (code) {
+    case CodeResort.CODE_00:
+      return "Siège"
+    case CodeResort.CODE_06:
+      return "Cambre d'Az"
+    case CodeResort.CODE_07:
+      return "Porté-Puymorens"
+    case CodeResort.CODE_08:
+      return "Formiguères"
+    case CodeResort.CODE_999:
+      return "Restauration"
+    default:
+      return "Station inconnue"
+  }
+}
+
+
+
+/**
  * Enum des statuts de demande d'achat
  */
 export enum PurchaseRequestStatus {
@@ -95,6 +149,8 @@ export interface Demande {
   name: string | null;
   date: string;
   deliveryDate: string | null;
+  description: string | null;
+  code: string;
   from: string;
   billing: {
     name: string;
