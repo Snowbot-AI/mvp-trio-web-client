@@ -672,7 +672,7 @@ export default function DetailDemande() {
 
         {/* Titre */}
         <div className="text-center py-8">
-          <h1 className="text-3xl font-bold text-gray-900">{`Demande d'achat Trio Pyrénées ${getStationName(demande.code)}`}</h1>
+          <h1 className="text-3xl font-bold text-gray-900">{`Demande d'achat Trio Pyrénées ${getStationName(demande.codeStation)}`}</h1>
           <div className="flex items-center justify-center gap-2 mt-4">
             {getIconeStatut(demande.status)}
             <Badge variant="outline" className={getCouleurStatut(demande.status)}>

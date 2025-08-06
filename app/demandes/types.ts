@@ -68,7 +68,7 @@ export enum TrioService {
 /**
  * Enum des codes de station Trio
  */
-export enum CodeResort {
+export enum CodeStation {
   /**
    * 00 for 'Siège'.
    */
@@ -97,20 +97,20 @@ export enum CodeResort {
 
 /**
  * Convertit un code de station en nom de station
- * @param code - Le code de la station (ex: "00", "06", etc.)
+ * @param codeStation - Le code de la station (ex: "00", "06", etc.)
  * @returns Le nom de la station correspondante
  */
-export function getStationName(code: string): string {
-  switch (code) {
-    case CodeResort.CODE_00:
+export function getStationName(codeStation: CodeStation): string {
+  switch (codeStation) {
+    case CodeStation.CODE_00:
       return "Siège"
-    case CodeResort.CODE_06:
+    case CodeStation.CODE_06:
       return "Cambre d'Az"
-    case CodeResort.CODE_07:
+    case CodeStation.CODE_07:
       return "Porté-Puymorens"
-    case CodeResort.CODE_08:
+    case CodeStation.CODE_08:
       return "Formiguères"
-    case CodeResort.CODE_999:
+    case CodeStation.CODE_999:
       return "Restauration"
     default:
       return "Station inconnue"
@@ -150,7 +150,7 @@ export interface Demande {
   date: string;
   deliveryDate: string | null;
   description: string | null;
-  code: string;
+  codeStation: CodeStation;
   from: string;
   billing: {
     name: string;

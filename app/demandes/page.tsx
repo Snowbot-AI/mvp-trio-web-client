@@ -20,7 +20,7 @@ import { Label } from "@/components/ui/label"
 import { Search, CheckCircle, XCircle, Clock, Plus, Loader2, FileText, Edit, Archive } from "lucide-react"
 import { Textarea } from "@/components/ui/textarea"
 import { useRouter } from "next/navigation"
-import { Demande, getStationName, PurchaseRequestStatus } from "./types"
+import { Demande, getStationName, PurchaseRequestStatus, CodeStation } from "./types"
 import { useDemandes } from "./hooks"
 
 const getIconeStatut = (statut: PurchaseRequestStatus) => {
@@ -82,7 +82,7 @@ const getLibelleStatut = (statut: PurchaseRequestStatus) => {
 export default function DemandesPage() {
   const [termeRecherche, setTermeRecherche] = useState("")
   const [filtreStatut, setFiltreStatut] = useState("tous")
-  const [filtreDepartement, setFiltreDepartement] = useState("tous")
+  const [filtreStation, setFiltreStation] = useState("tous")
 
   const [formulaireOuvert, setFormulaireOuvert] = useState(false)
   const [nouvelleDemande, setNouvelleDemande] = useState({
@@ -105,9 +105,9 @@ export default function DemandesPage() {
       (dem.from?.toLowerCase() || '').includes(termeRecherche.toLowerCase()) ||
       (dem.id?.toLowerCase() || '').includes(termeRecherche.toLowerCase())
     const correspondStatut = filtreStatut === "tous" || dem.status === filtreStatut
-    const correspondDepartement = filtreDepartement === "tous" || dem.from === filtreDepartement
+    const correspondStation = filtreStation === "tous" || dem.codeStation === filtreStation
 
-    return correspondRecherche && correspondStatut && correspondDepartement
+    return correspondRecherche && correspondStatut && correspondStation
   })
 
   const comptesStatut = {
@@ -200,9 +200,9 @@ export default function DemandesPage() {
             </DialogTrigger>
             <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
-                <DialogTitle>Créer une nouvelle demande d&aposachat</DialogTitle>
+                <DialogTitle>Créer une nouvelle demande d&apos;achat</DialogTitle>
                 <DialogDescription>
-                  Remplissez les informations ci-dessous pour soumettre votre demande d&aposachat
+                  Remplissez les informations ci-dessous pour soumettre votre demande d&apos;achat
                 </DialogDescription>
               </DialogHeader>
               <form onSubmit={gererSoumissionFormulaire} className="space-y-4">
@@ -436,16 +436,17 @@ export default function DemandesPage() {
                   <SelectItem value={PurchaseRequestStatus.EXPORTEE}>Exportée</SelectItem>
                 </SelectContent>
               </Select>
-              <Select value={filtreDepartement} onValueChange={setFiltreDepartement}>
+              <Select value={filtreStation} onValueChange={setFiltreStation}>
                 <SelectTrigger className="w-full md:w-48">
-                  <SelectValue placeholder="Filtrer par département" />
+                  <SelectValue placeholder="Filtrer par station" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="tous">Tous les départements</SelectItem>
-                  <SelectItem value="Marketing">Marketing</SelectItem>
-                  <SelectItem value="Informatique">Informatique</SelectItem>
-                  <SelectItem value="Ventes">Ventes</SelectItem>
-                  <SelectItem value="Ingénierie">Ingénierie</SelectItem>
+                  <SelectItem value="tous">Toutes les stations</SelectItem>
+                  <SelectItem value={CodeStation.CODE_00}>Siège</SelectItem>
+                  <SelectItem value={CodeStation.CODE_06}>Cambre d&apos;Az</SelectItem>
+                  <SelectItem value={CodeStation.CODE_07}>Porté-Puymorens</SelectItem>
+                  <SelectItem value={CodeStation.CODE_08}>Formiguères</SelectItem>
+                  <SelectItem value={CodeStation.CODE_999}>Restauration</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -464,7 +465,7 @@ export default function DemandesPage() {
                 <TableRow>
                   <TableHead>Demandeur</TableHead>
                   <TableHead>Date</TableHead>
-                  <TableHead>Département</TableHead>
+                  <TableHead>Station</TableHead>
                   <TableHead>Description</TableHead>
                   <TableHead>Montant</TableHead>
                   <TableHead>Statut</TableHead>
@@ -479,7 +480,7 @@ export default function DemandesPage() {
                   >
                     <TableCell className="font-medium">{dem.from || 'N/A'}</TableCell>
                     <TableCell>{dem.date ? new Date(dem.date).toLocaleDateString("fr-FR") : 'N/A'}</TableCell>
-                    <TableCell>{getStationName(dem.code) || 'N/A'}</TableCell>
+                    <TableCell>{getStationName(dem.codeStation) || 'N/A'}</TableCell>
                     <TableCell className="max-w-xs truncate" title={dem.description || ''}>
                       {dem.description || 'Aucune description'}
                     </TableCell>
