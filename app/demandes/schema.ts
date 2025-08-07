@@ -84,7 +84,7 @@ export const demandeSchema = z.object({
   status: z.string().refine((val) => [
     "EN_ATTENTE_VALIDATION",
     "VALIDE",
-    "VALIDEE", 
+    "VALIDEE",
     "REJETE",
     "EN_ATTENTE_DE_PLUS_D_INFO",
     "BROUILLON"

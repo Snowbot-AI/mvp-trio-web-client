@@ -142,7 +142,22 @@ export enum PurchaseRequestStatus {
   EXPORTEE = "EXPORTEE"
 }
 
+export enum ItemType {
+  GI = "gi",
+  GER = "ger",
+  INVEST = "invest",
+  FUNCT = "funct"
+}
+
 export type StatusDemande = PurchaseRequestStatus
+
+export type FileType = {
+  id: string;
+  name: string;
+  category: string;
+  uploadInstant: string;
+  file?: File; // Fichier réel pour l'upload
+}
 
 export interface Demande {
   id: string;
@@ -173,7 +188,7 @@ export interface Demande {
     description: string;
     service: string;
     budgetType: string;
-    itemType?: string | null;
+    itemType?: ItemType | null;
     referenceDevis?: string;
     quantity: number;
     unitPrice: number;
@@ -194,11 +209,5 @@ export interface Demande {
   comment?: string;
   signatureDemandeur?: boolean;
   validationResponsable?: boolean;
-  files: Array<{
-    id: string;
-    name: string;
-    category: string;
-    uploadInstant: string;
-    file?: File; // Fichier réel pour l'upload
-  }>;
+  files: FileType[];
 } 
