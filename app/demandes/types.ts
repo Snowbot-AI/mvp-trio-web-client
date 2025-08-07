@@ -137,9 +137,6 @@ export enum PurchaseRequestStatus {
 
   /** The request has been rejected following a review. */
   REJETEE = "REJETEE",
-
-  /** The request has been exported for accounting, and relevant documents have been archived. */
-  EXPORTEE = "EXPORTEE"
 }
 
 export enum ItemType {
@@ -152,11 +149,10 @@ export enum ItemType {
 export type StatusDemande = PurchaseRequestStatus
 
 export type FileType = {
-  id: string;
+  id?: string;
   name: string;
   category: string;
   uploadInstant: string;
-  file?: File; // Fichier réel pour l'upload
 }
 
 export interface Demande {

@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
-import { CheckCircle, XCircle, Clock, Edit, Save, X } from "lucide-react"
+import { CheckCircle, XCircle, Clock, Edit, Save, X, Download } from "lucide-react"
 import { PurchaseRequestStatus, type Demande } from "../../types"
 
 interface ActionButtonsProps {
@@ -32,6 +32,7 @@ interface ActionButtonsProps {
     onMoreInfoCommentChange: (comment: string) => void
     onShowRejectDialogChange: (show: boolean) => void
     onShowMoreInfoDialogChange: (show: boolean) => void
+    onExport: () => void
 }
 
 export function ActionButtons({
@@ -51,6 +52,7 @@ export function ActionButtons({
     onMoreInfoCommentChange,
     onShowRejectDialogChange,
     onShowMoreInfoDialogChange,
+    onExport,
 }: ActionButtonsProps) {
     if (modeEdition) {
         return (
@@ -206,10 +208,21 @@ export function ActionButtons({
                 </div>
             )}
 
-            {demande.status !== PurchaseRequestStatus.A_VERIFIER && (
-                <Button onClick={onEdit}>
-                    <Edit className="h-4 w-4 mr-2" />
-                    Modifier
+            {/* Bouton Modifier - caché pour les statuts finaux */}
+            {demande.status !== PurchaseRequestStatus.A_VERIFIER &&
+                demande.status !== PurchaseRequestStatus.VALIDEE &&
+                demande.status !== PurchaseRequestStatus.REJETEE && (
+                    <Button onClick={onEdit}>
+                        <Edit className="h-4 w-4 mr-2" />
+                        Modifier
+                    </Button>
+                )}
+
+            {/* Bouton Exporter - visible seulement pour les statuts finaux */}
+            {(demande.status === PurchaseRequestStatus.VALIDEE || demande.status === PurchaseRequestStatus.REJETEE) && (
+                <Button variant="outline" onClick={onExport}>
+                    <Download className="h-4 w-4 mr-2" />
+                    Exporter PDF
                 </Button>
             )}
 

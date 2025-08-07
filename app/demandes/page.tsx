@@ -17,7 +17,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
-import { Search, CheckCircle, XCircle, Clock, Plus, Loader2, FileText, Edit, Archive } from "lucide-react"
+import { Search, CheckCircle, XCircle, Clock, Plus, Loader2, FileText, Edit } from "lucide-react"
 import { Textarea } from "@/components/ui/textarea"
 import { useRouter } from "next/navigation"
 import { Demande, getStationName, PurchaseRequestStatus, CodeStation } from "./types"
@@ -33,8 +33,6 @@ const getIconeStatut = (statut: PurchaseRequestStatus) => {
       return <Clock className="h-4 w-4 text-blue-600" />
     case PurchaseRequestStatus.A_MODIFIER:
       return <Edit className="h-4 w-4 text-orange-600" />
-    case PurchaseRequestStatus.EXPORTEE:
-      return <Archive className="h-4 w-4 text-purple-600" />
     case PurchaseRequestStatus.BROUILLON:
     default:
       return <FileText className="h-4 w-4 text-gray-600" />
@@ -51,8 +49,6 @@ const getCouleurStatut = (statut: PurchaseRequestStatus) => {
       return "bg-blue-100 text-blue-800 border-blue-200"
     case PurchaseRequestStatus.A_MODIFIER:
       return "bg-orange-100 text-orange-800 border-orange-200"
-    case PurchaseRequestStatus.EXPORTEE:
-      return "bg-purple-100 text-purple-800 border-purple-200"
     case PurchaseRequestStatus.BROUILLON:
     default:
       return "bg-gray-100 text-gray-800 border-gray-200"
@@ -71,8 +67,6 @@ const getLibelleStatut = (statut: PurchaseRequestStatus) => {
       return "Validée"
     case PurchaseRequestStatus.REJETEE:
       return "Rejetée"
-    case PurchaseRequestStatus.EXPORTEE:
-      return "Exportée"
     default:
       return statut
   }
@@ -103,7 +97,19 @@ export default function DemandesPage() {
     const correspondRecherche =
       (dem.name?.toLowerCase() || '').includes(termeRecherche.toLowerCase()) ||
       (dem.from?.toLowerCase() || '').includes(termeRecherche.toLowerCase()) ||
-      (dem.id?.toLowerCase() || '').includes(termeRecherche.toLowerCase())
+      (dem.id?.toLowerCase() || '').includes(termeRecherche.toLowerCase()) ||
+      (dem.description?.toLowerCase() || '').includes(termeRecherche.toLowerCase()) ||
+      (dem.billing?.name?.toLowerCase() || '').includes(termeRecherche.toLowerCase()) ||
+      (dem.billing?.address?.toLowerCase() || '').includes(termeRecherche.toLowerCase()) ||
+      (dem.billing?.siret?.toLowerCase() || '').includes(termeRecherche.toLowerCase()) ||
+      (dem.provider?.name?.toLowerCase() || '').includes(termeRecherche.toLowerCase()) ||
+      (dem.provider?.address?.toLowerCase() || '').includes(termeRecherche.toLowerCase()) ||
+      (dem.delivery?.address?.toLowerCase() || '').includes(termeRecherche.toLowerCase()) ||
+      (dem.items?.some(item =>
+        item.description?.toLowerCase().includes(termeRecherche.toLowerCase()) ||
+        item.service?.toLowerCase().includes(termeRecherche.toLowerCase()) ||
+        item.referenceDevis?.toLowerCase().includes(termeRecherche.toLowerCase())
+      ) || false)
     const correspondStatut = filtreStatut === "tous" || dem.status === filtreStatut
     const correspondStation = filtreStation === "tous" || dem.codeStation === filtreStation
 
@@ -116,7 +122,6 @@ export default function DemandesPage() {
     [PurchaseRequestStatus.A_MODIFIER]: (demandes || []).filter((d: Demande) => d.status === PurchaseRequestStatus.A_MODIFIER).length,
     [PurchaseRequestStatus.VALIDEE]: (demandes || []).filter((d: Demande) => d.status === PurchaseRequestStatus.VALIDEE).length,
     [PurchaseRequestStatus.REJETEE]: (demandes || []).filter((d: Demande) => d.status === PurchaseRequestStatus.REJETEE).length,
-    [PurchaseRequestStatus.EXPORTEE]: (demandes || []).filter((d: Demande) => d.status === PurchaseRequestStatus.EXPORTEE).length,
   }
 
   const montantTotal = demandesFiltrees.reduce((somme: number, dem: Demande) => somme + (dem.total.total || 0), 0)
@@ -186,158 +191,163 @@ export default function DemandesPage() {
     <div className="min-h-screen bg-gray-50 p-6 pt-8">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* En-tête */}
-        <div className="flex items-center justify-between">
-          <div>
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          {/* Titre et sous-titre */}
+          <div className="text-center md:text-left">
             <h1 className="text-3xl font-bold text-gray-900">Suivi des Demandes d&apos;Achat</h1>
             <p className="text-gray-600 mt-1">Gérer et suivre les demandes d&apos;achat</p>
           </div>
-          <Dialog open={formulaireOuvert} onOpenChange={setFormulaireOuvert}>
-            <DialogTrigger asChild>
-              <Button className="flex items-center gap-2">
-                <Plus className="h-4 w-4" />
-                Nouvelle Demande
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>Créer une nouvelle demande d&apos;achat</DialogTitle>
-                <DialogDescription>
-                  Remplissez les informations ci-dessous pour soumettre votre demande d&apos;achat
-                </DialogDescription>
-              </DialogHeader>
-              <form onSubmit={gererSoumissionFormulaire} className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="md:col-span-2">
-                    <Label htmlFor="name" className="text-sm font-medium">
-                      Nom de la demande *
-                    </Label>
-                    <Input
-                      id="name"
-                      value={nouvelleDemande.name}
-                      onChange={(e) => gererChangementChamp("name", e.target.value)}
-                      placeholder="Ex: Fournitures de bureau - T1"
-                      required
-                      className="mt-1"
-                    />
+
+          {/* Bouton Nouvelle Demande */}
+          <div className="flex justify-center md:justify-end">
+            <Dialog open={formulaireOuvert} onOpenChange={setFormulaireOuvert}>
+              <DialogTrigger asChild>
+                <Button className="flex items-center gap-2">
+                  <Plus className="h-4 w-4" />
+                  Nouvelle Demande
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>Créer une nouvelle demande d&apos;achat</DialogTitle>
+                  <DialogDescription>
+                    Remplissez les informations ci-dessous pour soumettre votre demande d&apos;achat
+                  </DialogDescription>
+                </DialogHeader>
+                <form onSubmit={gererSoumissionFormulaire} className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="md:col-span-2">
+                      <Label htmlFor="name" className="text-sm font-medium">
+                        Nom de la demande *
+                      </Label>
+                      <Input
+                        id="name"
+                        value={nouvelleDemande.name}
+                        onChange={(e) => gererChangementChamp("name", e.target.value)}
+                        placeholder="Ex: Fournitures de bureau - T1"
+                        required
+                        className="mt-1"
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="from" className="text-sm font-medium">
+                        Demandeur *
+                      </Label>
+                      <Input
+                        id="from"
+                        value={nouvelleDemande.from}
+                        onChange={(e) => gererChangementChamp("from", e.target.value)}
+                        placeholder="Nom du demandeur"
+                        required
+                        className="mt-1"
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="service" className="text-sm font-medium">
+                        Service *
+                      </Label>
+                      <Select
+                        value={nouvelleDemande.service}
+                        onValueChange={(value) => gererChangementChamp("service", value)}
+                        required
+                      >
+                        <SelectTrigger className="mt-1">
+                          <SelectValue placeholder="Sélectionner un service" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="ACC">Accueil</SelectItem>
+                          <SelectItem value="ADM">Admin</SelectItem>
+                          <SelectItem value="BAT">Bâtiment</SelectItem>
+                          <SelectItem value="BIL">Billetterie</SelectItem>
+                          <SelectItem value="COM">Communication</SelectItem>
+                          <SelectItem value="DAM">Dammage</SelectItem>
+                          <SelectItem value="PAR">Parc de roulage</SelectItem>
+                          <SelectItem value="PIS">Pistes</SelectItem>
+                          <SelectItem value="REST">Restaurant</SelectItem>
+                          <SelectItem value="RM">Remontée mécanique</SelectItem>
+                          <SelectItem value="USI">Snowmaker</SelectItem>
+                          <SelectItem value="AUT">Autre</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div>
+                      <Label htmlFor="total" className="text-sm font-medium">
+                        Montant total (€) *
+                      </Label>
+                      <Input
+                        id="total"
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={nouvelleDemande.total}
+                        onChange={(e) => gererChangementChamp("total", e.target.value)}
+                        placeholder="0.00"
+                        required
+                        className="mt-1"
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="priority" className="text-sm font-medium">
+                        Priorité
+                      </Label>
+                      <Select
+                        value={nouvelleDemande.priority}
+                        onValueChange={(value: "HIGH" | "LOW") =>
+                          gererChangementChamp("priority", value)
+                        }
+                      >
+                        <SelectTrigger className="mt-1">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="LOW">Faible</SelectItem>
+                          <SelectItem value="HIGH">Élevée</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="md:col-span-2">
+                      <Label htmlFor="description" className="text-sm font-medium">
+                        Description
+                      </Label>
+                      <Textarea
+                        id="description"
+                        value={nouvelleDemande.description}
+                        onChange={(e) => gererChangementChamp("description", e.target.value)}
+                        placeholder="Description de la demande..."
+                        rows={4}
+                        className="mt-1"
+                      />
+                    </div>
                   </div>
 
-                  <div>
-                    <Label htmlFor="from" className="text-sm font-medium">
-                      Demandeur *
-                    </Label>
-                    <Input
-                      id="from"
-                      value={nouvelleDemande.from}
-                      onChange={(e) => gererChangementChamp("from", e.target.value)}
-                      placeholder="Nom du demandeur"
-                      required
-                      className="mt-1"
-                    />
+                  <div className="flex items-center justify-between pt-4 border-t">
+                    <p className="text-sm text-gray-500">* Champs obligatoires</p>
+                    <div className="flex gap-2">
+                      <Button type="button" variant="outline" onClick={() => setFormulaireOuvert(false)}>
+                        Annuler
+                      </Button>
+                      <Button
+                        type="submit"
+                        disabled={
+                          !nouvelleDemande.name ||
+                          !nouvelleDemande.from ||
+                          !nouvelleDemande.service ||
+                          !nouvelleDemande.total
+                        }
+                      >
+                        Soumettre la demande
+                      </Button>
+                    </div>
                   </div>
-
-                  <div>
-                    <Label htmlFor="service" className="text-sm font-medium">
-                      Service *
-                    </Label>
-                    <Select
-                      value={nouvelleDemande.service}
-                      onValueChange={(value) => gererChangementChamp("service", value)}
-                      required
-                    >
-                      <SelectTrigger className="mt-1">
-                        <SelectValue placeholder="Sélectionner un service" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="ACC">Accueil</SelectItem>
-                        <SelectItem value="ADM">Admin</SelectItem>
-                        <SelectItem value="BAT">Bâtiment</SelectItem>
-                        <SelectItem value="BIL">Billetterie</SelectItem>
-                        <SelectItem value="COM">Communication</SelectItem>
-                        <SelectItem value="DAM">Dammage</SelectItem>
-                        <SelectItem value="PAR">Parc de roulage</SelectItem>
-                        <SelectItem value="PIS">Pistes</SelectItem>
-                        <SelectItem value="REST">Restaurant</SelectItem>
-                        <SelectItem value="RM">Remontée mécanique</SelectItem>
-                        <SelectItem value="USI">Snowmaker</SelectItem>
-                        <SelectItem value="AUT">Autre</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div>
-                    <Label htmlFor="total" className="text-sm font-medium">
-                      Montant total (€) *
-                    </Label>
-                    <Input
-                      id="total"
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      value={nouvelleDemande.total}
-                      onChange={(e) => gererChangementChamp("total", e.target.value)}
-                      placeholder="0.00"
-                      required
-                      className="mt-1"
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="priority" className="text-sm font-medium">
-                      Priorité
-                    </Label>
-                    <Select
-                      value={nouvelleDemande.priority}
-                      onValueChange={(value: "HIGH" | "LOW") =>
-                        gererChangementChamp("priority", value)
-                      }
-                    >
-                      <SelectTrigger className="mt-1">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="LOW">Faible</SelectItem>
-                        <SelectItem value="HIGH">Élevée</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="md:col-span-2">
-                    <Label htmlFor="description" className="text-sm font-medium">
-                      Description
-                    </Label>
-                    <Textarea
-                      id="description"
-                      value={nouvelleDemande.description}
-                      onChange={(e) => gererChangementChamp("description", e.target.value)}
-                      placeholder="Description de la demande..."
-                      rows={4}
-                      className="mt-1"
-                    />
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between pt-4 border-t">
-                  <p className="text-sm text-gray-500">* Champs obligatoires</p>
-                  <div className="flex gap-2">
-                    <Button type="button" variant="outline" onClick={() => setFormulaireOuvert(false)}>
-                      Annuler
-                    </Button>
-                    <Button
-                      type="submit"
-                      disabled={
-                        !nouvelleDemande.name ||
-                        !nouvelleDemande.from ||
-                        !nouvelleDemande.service ||
-                        !nouvelleDemande.total
-                      }
-                    >
-                      Soumettre la demande
-                    </Button>
-                  </div>
-                </div>
-              </form>
-            </DialogContent>
-          </Dialog>
+                </form>
+              </DialogContent>
+            </Dialog>
+          </div>
         </div>
 
         {/* Cartes de résumé */}
@@ -390,10 +400,10 @@ export default function DemandesPage() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">Exportées</p>
-                  <p className="text-2xl font-bold text-purple-600">{comptesStatut[PurchaseRequestStatus.EXPORTEE]}</p>
+                  <p className="text-sm text-gray-600">Rejetées</p>
+                  <p className="text-2xl font-bold text-red-600">{comptesStatut[PurchaseRequestStatus.REJETEE]}</p>
                 </div>
-                <Archive className="h-8 w-8 text-purple-600" />
+                <XCircle className="h-8 w-8 text-red-600" />
               </div>
             </CardContent>
           </Card>
@@ -433,7 +443,6 @@ export default function DemandesPage() {
                   <SelectItem value={PurchaseRequestStatus.A_MODIFIER}>À modifier</SelectItem>
                   <SelectItem value={PurchaseRequestStatus.VALIDEE}>Validée</SelectItem>
                   <SelectItem value={PurchaseRequestStatus.REJETEE}>Rejetée</SelectItem>
-                  <SelectItem value={PurchaseRequestStatus.EXPORTEE}>Exportée</SelectItem>
                 </SelectContent>
               </Select>
               <Select value={filtreStation} onValueChange={setFiltreStation}>
@@ -468,6 +477,7 @@ export default function DemandesPage() {
                   <TableHead>Station</TableHead>
                   <TableHead>Description</TableHead>
                   <TableHead>Montant</TableHead>
+                  <TableHead>Priorité</TableHead>
                   <TableHead>Statut</TableHead>
                 </TableRow>
               </TableHeader>
@@ -485,6 +495,14 @@ export default function DemandesPage() {
                       {dem.description || 'Aucune description'}
                     </TableCell>
                     <TableCell>{(dem.total.total || 0).toLocaleString()} €</TableCell>
+                    <TableCell>
+                      <Badge
+                        variant="outline"
+                        className={dem.priority === "HIGH" ? "bg-orange-100 text-orange-800 border-orange-200" : "bg-gray-100 text-gray-800 border-gray-200"}
+                      >
+                        {dem.priority === "HIGH" ? "Élevée" : "Faible"}
+                      </Badge>
+                    </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
                         {getIconeStatut(dem.status || PurchaseRequestStatus.BROUILLON)}

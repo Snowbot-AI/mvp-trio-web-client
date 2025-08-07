@@ -84,14 +84,14 @@ export function FilesSection({
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-2">
-                                        <Button size="sm" variant="outline" onClick={() => onDownloadFile(fichier.id, fichier.name)}>
+                                        <Button size="sm" variant="outline" onClick={() => onDownloadFile(fichier.id || "", fichier.name)}>
                                             Télécharger
                                         </Button>
                                         {modeEdition && (
                                             <Button
                                                 size="sm"
                                                 variant="destructive"
-                                                onClick={() => onSetFileToDelete({ id: fichier.id, name: fichier.name })}
+                                                onClick={() => onSetFileToDelete({ id: fichier.id || "", name: fichier.name })}
                                             >
                                                 <Trash2 className="h-4 w-4" />
                                             </Button>
@@ -153,14 +153,14 @@ export function FilesSection({
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-2">
-                                        <Button size="sm" variant="outline" onClick={() => onDownloadFile(fichier.id, fichier.name)}>
+                                        <Button size="sm" variant="outline" onClick={() => onDownloadFile(fichier.id || "", fichier.name)}>
                                             Télécharger
                                         </Button>
                                         {modeEdition && (
                                             <Button
                                                 size="sm"
                                                 variant="destructive"
-                                                onClick={() => onSetFileToDelete({ id: fichier.id, name: fichier.name })}
+                                                onClick={() => onSetFileToDelete({ id: fichier.id || "", name: fichier.name })}
                                             >
                                                 <Trash2 className="h-4 w-4" />
                                             </Button>

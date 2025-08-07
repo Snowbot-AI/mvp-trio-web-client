@@ -8,9 +8,10 @@ import { Button } from "@/components/ui/button"
 import { Toaster } from "@/components/ui/sonner"
 import { toast } from "sonner"
 import { ArrowLeft } from "lucide-react"
-import type { Demande, StatusDemande } from "../types"
+import type { Demande, FileType, StatusDemande } from "../types"
 import { getStationName } from "../types"
 import { useDemande, useUpdateDemandeWithJsonFile } from "../hooks"
+import { buildApiUrl } from "@/lib/api-config"
 
 // Composants refactorisés
 import { StatusBadge } from "./components/StatusBadge"
@@ -20,10 +21,10 @@ import { FinancialSummaryCard } from "./components/FinancialSummaryCard"
 import { ItemsTable } from "./components/ItemsTable"
 import { ContactInfoCards } from "./components/ContactInfoCards"
 import { FilesSection } from "./components/FilesSection"
+import { PDFModal } from "./components/PDFModal"
 
 // Hooks personnalisés
 import { useValidation } from "./hooks/useValidation"
-import { useFileManagement } from "./hooks/useFileManagement"
 
 export default function DetailDemande() {
   const router = useRouter()
@@ -38,8 +39,11 @@ export default function DetailDemande() {
   const [ajoutArticle, setAjoutArticle] = useState(false)
   const [showRejectDialog, setShowRejectDialog] = useState(false)
   const [showMoreInfoDialog, setShowMoreInfoDialog] = useState(false)
+  const [showPDFModal, setShowPDFModal] = useState(false)
   const [rejectComment, setRejectComment] = useState("")
   const [moreInfoComment, setMoreInfoComment] = useState("")
+  const [filesToUpload, setFilesToUpload] = useState<File[]>([])
+  const [fichierASupprimer, setFichierASupprimer] = useState<{ id: string; name: string } | null>(null)
 
   // Hooks personnalisés
   const {
@@ -49,14 +53,6 @@ export default function DetailDemande() {
     validateEmailField,
     clearValidationErrors,
   } = useValidation()
-
-  const {
-    fichierASupprimer,
-    setFichierASupprimer,
-    gererUploadFichier,
-    confirmerSuppressionFichier,
-    telechargerFichier,
-  } = useFileManagement()
 
   // React Hook Form avec validation en temps réel
   const {
@@ -84,7 +80,7 @@ export default function DetailDemande() {
   }, [demande, reset])
 
   // Handlers
-  const gererSauvegarde = (data: Demande) => {
+  const gererSauvegarde = (data: Demande, files?: File[]) => {
     clearValidationErrors()
 
     const dataToSave = { ...data }
@@ -113,13 +109,11 @@ export default function DetailDemande() {
       }
     }
 
-    const files = watch("files") || []
-    const filesToUpload = files.filter((file) => file.file).map((file) => file.file)
-
-    updateDemandeWithJsonFileMutation.mutate({ requests: dataToSave, files: filesToUpload }, {
+    updateDemandeWithJsonFileMutation.mutate({ requests: dataToSave, files: files || [] }, {
       onSuccess: () => {
         setModeEdition(false)
         setAjoutArticle(false)
+        setFilesToUpload([])
         toast.success("Sauvegarde réussie !")
       },
       onError: (error) => {
@@ -141,6 +135,7 @@ export default function DetailDemande() {
     reset(demande || undefined)
     setModeEdition(false)
     setAjoutArticle(false)
+    setFilesToUpload([])
     clearValidationErrors()
   }
 
@@ -176,11 +171,87 @@ export default function DetailDemande() {
 
   // Handlers pour les fichiers
   const handleUploadFile = (event: React.ChangeEvent<HTMLInputElement>, category: string) => {
-    gererUploadFichier(event, category, watch, reset)
+    const fichiers = event.target.files
+    if (fichiers) {
+      const nouveauxFichiers = Array.from(fichiers)
+      setFilesToUpload(prev => [...prev, ...nouveauxFichiers])
+
+      // Ajouter les métadonnées des fichiers au formulaire pour l'affichage
+      const nouveauxFichiersMetadata = nouveauxFichiers.map((fichier) => ({
+        name: fichier.name,
+        category: category,
+        uploadInstant: new Date().toISOString(),
+      }))
+
+      const currentFiles = watch("files") || []
+      const updatedFiles = [...currentFiles, ...nouveauxFichiersMetadata]
+      setValue('files', updatedFiles)
+    }
   }
 
   const handleConfirmDeleteFile = () => {
-    confirmerSuppressionFichier(watch, reset)
+    if (fichierASupprimer) {
+      // Supprimer du formulaire
+      const currentFiles = watch("files") || []
+      const updatedFiles = currentFiles.filter((f: FileType) => f.id !== fichierASupprimer.id)
+      setValue('files', updatedFiles)
+
+      // Supprimer des fichiers à uploader si c'est un nouveau fichier
+      setFilesToUpload(prev => prev.filter(file => file.name !== fichierASupprimer.name))
+
+      setFichierASupprimer(null)
+    }
+  }
+
+  // Fonction pour télécharger un fichier
+  const telechargerFichier = async (fileId: string, fileName: string) => {
+    try {
+      const response = await fetch(buildApiUrl(`/api/files/${fileId}`))
+
+      if (!response.ok) {
+        throw new Error(`Erreur ${response.status}: ${response.statusText}`)
+      }
+
+      // Récupérer le blob du fichier
+      const blob = await response.blob()
+
+      // Créer un lien de téléchargement
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = fileName
+
+      // Déclencher le téléchargement
+      document.body.appendChild(link)
+      link.click()
+
+      // Nettoyer
+      document.body.removeChild(link)
+      window.URL.revokeObjectURL(url)
+
+      toast.success(`Téléchargement de "${fileName}" réussi !`)
+    } catch (error) {
+      console.error('Erreur lors du téléchargement:', error)
+      toast.error(`Erreur lors du téléchargement de "${fileName}"`, {
+        duration: 4000,
+        style: {
+          background: 'white',
+          color: '#ef4444',
+          fontWeight: 'bold',
+          border: '1px solid #ef4444'
+        }
+      })
+    }
+  }
+
+  // Fonction wrapper pour la sauvegarde avec extraction des fichiers
+  const handleSave = (data: Demande) => {
+    gererSauvegarde(data, filesToUpload)
+  }
+
+  // Fonction d'export PDF
+  const handleExportPDF = () => {
+    setShowPDFModal(true)
   }
 
   // États de chargement et d'erreur
@@ -257,12 +328,13 @@ export default function DetailDemande() {
               moreInfoComment={moreInfoComment}
               onEdit={() => setModeEdition(true)}
               onCancel={gererAnnulation}
-              onSave={handleSubmit(gererSauvegarde)}
+              onSave={handleSubmit(handleSave)}
               onStatusChange={gererChangementStatut}
               onRejectCommentChange={setRejectComment}
               onMoreInfoCommentChange={setMoreInfoComment}
               onShowRejectDialogChange={setShowRejectDialog}
               onShowMoreInfoDialogChange={setShowMoreInfoDialog}
+              onExport={handleExportPDF}
             />
           </div>
         </div>
@@ -344,6 +416,13 @@ export default function DetailDemande() {
           )}
         </div>
       </div>
+
+      {/* Modal PDF */}
+      <PDFModal
+        isOpen={showPDFModal}
+        onClose={() => setShowPDFModal(false)}
+        demande={demande}
+      />
 
       <Toaster
         closeButton
