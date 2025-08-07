@@ -5,17 +5,16 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { FileText } from "lucide-react"
-import { type Demande } from "../../types"
-import { UseFormRegister, UseFormSetValue, UseFormWatch } from "react-hook-form"
+import { UseFormRegister, UseFormSetValue, UseFormWatch, FieldErrors } from "react-hook-form"
+import { DemandeFormData } from "../../validation-schema"
 
 interface GeneralInfoCardProps {
-    demande: Demande
+    demande: DemandeFormData
     modeEdition: boolean
-    validationErrors: Record<string, string>
-    register: UseFormRegister<Demande>
-    watch: UseFormWatch<Demande>
-    setValue: UseFormSetValue<Demande>
-    validateField: (fieldName: string, value: string | number) => void
+    validationErrors: FieldErrors<DemandeFormData>
+    register: UseFormRegister<DemandeFormData>
+    watch: UseFormWatch<DemandeFormData>
+    setValue: UseFormSetValue<DemandeFormData>
 }
 
 export function GeneralInfoCard({
@@ -25,7 +24,6 @@ export function GeneralInfoCard({
     register,
     watch,
     setValue,
-    validateField,
 }: GeneralInfoCardProps) {
     return (
         <Card>
@@ -73,14 +71,12 @@ export function GeneralInfoCard({
                             <Input
                                 {...register("from")}
                                 className={`mt-1 ${validationErrors.from ? 'border-red-500' : ''}`}
-                                onBlur={(e) => validateField("from", e.target.value)}
-                                onChange={(e) => validateField("from", e.target.value)}
                             />
                         ) : (
                             <p className="mt-1">{demande.from}</p>
                         )}
                         {validationErrors.from && (
-                            <p className="text-red-500 text-sm mt-1">{validationErrors.from}</p>
+                            <p className="text-red-500 text-sm mt-1">{validationErrors.from.message}</p>
                         )}
                     </div>
                     <div>
@@ -102,10 +98,7 @@ export function GeneralInfoCard({
                             </Select>
                         ) : (
                             <div className="mt-1">
-                                <Badge
-                                    variant="outline"
-                                    className={demande.priority === "HIGH" ? "bg-orange-100 text-orange-800 border-orange-200" : "bg-gray-100 text-gray-800 border-gray-200"}
-                                >
+                                <Badge variant={demande.priority === "HIGH" ? "destructive" : "secondary"}>
                                     {demande.priority === "HIGH" ? "Élevée" : "Faible"}
                                 </Badge>
                             </div>

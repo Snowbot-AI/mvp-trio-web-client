@@ -1,9 +1,9 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { DemandeFormData } from "../../validation-schema"
 import { Euro } from "lucide-react"
-import { type Demande } from "../../types"
 
 interface FinancialSummaryCardProps {
-    demande: Demande
+    demande: DemandeFormData
 }
 
 export function FinancialSummaryCard({ demande }: FinancialSummaryCardProps) {

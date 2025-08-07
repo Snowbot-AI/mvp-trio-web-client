@@ -98,7 +98,7 @@ export enum CodeStation {
 /**
  * Convertit un code de station en nom de station
  * @param codeStation - Le code de la station (ex: "00", "06", etc.)
- * @returns Le nom de la station correspondante
+ * @returns Le nom de la station correspondant
  */
 export function getStationName(codeStation: CodeStation): string {
   switch (codeStation) {
@@ -116,8 +116,6 @@ export function getStationName(codeStation: CodeStation): string {
       return "Station inconnue"
   }
 }
-
-
 
 /**
  * Enum des statuts de demande d'achat
@@ -146,64 +144,4 @@ export enum ItemType {
   FUNCT = "funct"
 }
 
-export type StatusDemande = PurchaseRequestStatus
-
-export type FileType = {
-  id?: string;
-  name: string;
-  category: string;
-  uploadInstant: string;
-}
-
-export interface Demande {
-  id: string;
-  name: string | null;
-  date: string;
-  deliveryDate: string | null;
-  description: string | null;
-  codeStation: CodeStation;
-  from: string;
-  billing: {
-    name: string;
-    address: string;
-    emails: string[];
-    siret: string;
-  };
-  delivery: {
-    address: string;
-    tel: string;
-  };
-  priority: "HIGH" | "LOW";
-  provider: {
-    name: string;
-    address: string;
-    tel: string | null;
-    email: string | null;
-  };
-  items: Array<{
-    description: string;
-    service: string;
-    budgetType: string;
-    itemType?: ItemType | null;
-    referenceDevis?: string;
-    quantity: number;
-    unitPrice: number;
-    price: number;
-    totalPriceConsistent?: boolean;
-  }>;
-  total: {
-    orderTotal: number;
-    deliveryTotal?: number;
-    billingFees?: number;
-    participationLivraison?: number;
-    fraisFacturation?: number;
-    other?: number;
-    total: number;
-    totalCorrect?: boolean;
-  };
-  status: StatusDemande;
-  comment?: string;
-  signatureDemandeur?: boolean;
-  validationResponsable?: boolean;
-  files: FileType[];
-} 
+export type StatusDemande = PurchaseRequestStatus 

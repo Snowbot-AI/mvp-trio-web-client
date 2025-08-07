@@ -20,8 +20,9 @@ import { Label } from "@/components/ui/label"
 import { Search, CheckCircle, XCircle, Clock, Plus, Loader2, FileText, Edit } from "lucide-react"
 import { Textarea } from "@/components/ui/textarea"
 import { useRouter } from "next/navigation"
-import { Demande, getStationName, PurchaseRequestStatus, CodeStation } from "./types"
+import { getStationName, PurchaseRequestStatus, CodeStation } from "./types"
 import { useDemandes } from "./hooks"
+import { DemandeFormData } from "./validation-schema"
 
 const getIconeStatut = (statut: PurchaseRequestStatus) => {
   switch (statut) {
@@ -93,9 +94,8 @@ export default function DemandesPage() {
   // Utiliser React Query pour récupérer les demandes
   const { data: demandes, isLoading, error } = useDemandes()
 
-  const demandesFiltrees = (demandes || []).filter((dem: Demande) => {
+  const demandesFiltrees = (demandes || []).filter((dem: DemandeFormData) => {
     const correspondRecherche =
-      (dem.name?.toLowerCase() || '').includes(termeRecherche.toLowerCase()) ||
       (dem.from?.toLowerCase() || '').includes(termeRecherche.toLowerCase()) ||
       (dem.id?.toLowerCase() || '').includes(termeRecherche.toLowerCase()) ||
       (dem.description?.toLowerCase() || '').includes(termeRecherche.toLowerCase()) ||
@@ -117,14 +117,14 @@ export default function DemandesPage() {
   })
 
   const comptesStatut = {
-    [PurchaseRequestStatus.BROUILLON]: (demandes || []).filter((d: Demande) => d.status === PurchaseRequestStatus.BROUILLON).length,
-    [PurchaseRequestStatus.A_VERIFIER]: (demandes || []).filter((d: Demande) => d.status === PurchaseRequestStatus.A_VERIFIER).length,
-    [PurchaseRequestStatus.A_MODIFIER]: (demandes || []).filter((d: Demande) => d.status === PurchaseRequestStatus.A_MODIFIER).length,
-    [PurchaseRequestStatus.VALIDEE]: (demandes || []).filter((d: Demande) => d.status === PurchaseRequestStatus.VALIDEE).length,
-    [PurchaseRequestStatus.REJETEE]: (demandes || []).filter((d: Demande) => d.status === PurchaseRequestStatus.REJETEE).length,
+    [PurchaseRequestStatus.BROUILLON]: (demandes || []).filter((d: DemandeFormData) => d.status === PurchaseRequestStatus.BROUILLON).length,
+    [PurchaseRequestStatus.A_VERIFIER]: (demandes || []).filter((d: DemandeFormData) => d.status === PurchaseRequestStatus.A_VERIFIER).length,
+    [PurchaseRequestStatus.A_MODIFIER]: (demandes || []).filter((d: DemandeFormData) => d.status === PurchaseRequestStatus.A_MODIFIER).length,
+    [PurchaseRequestStatus.VALIDEE]: (demandes || []).filter((d: DemandeFormData) => d.status === PurchaseRequestStatus.VALIDEE).length,
+    [PurchaseRequestStatus.REJETEE]: (demandes || []).filter((d: DemandeFormData) => d.status === PurchaseRequestStatus.REJETEE).length,
   }
 
-  const montantTotal = demandesFiltrees.reduce((somme: number, dem: Demande) => somme + (dem.total.total || 0), 0)
+  const montantTotal = demandesFiltrees.reduce((somme: number, dem: DemandeFormData) => somme + (dem.total.total || 0), 0)
 
   const gererSoumissionFormulaire = (e: React.FormEvent) => {
     e.preventDefault()

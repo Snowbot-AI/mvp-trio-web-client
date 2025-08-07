@@ -4,20 +4,19 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Tag, Plus, Trash2, X } from "lucide-react"
-import { TrioService, ItemType, type Demande } from "../../types"
-import { UseFormRegister, UseFormSetValue, UseFormWatch } from "react-hook-form"
+import { TrioService, ItemType } from "../../types"
+import { UseFormRegister, UseFormSetValue, UseFormWatch, FieldErrors, FieldArrayWithId } from "react-hook-form"
+import { DemandeFormData } from "../../validation-schema"
 
 interface ItemsTableProps {
-    demande: Demande
+    demande: DemandeFormData
     modeEdition: boolean
     ajoutArticle: boolean
-    validationErrors: Record<string, string>
-    items: Demande['items']
-    register: UseFormRegister<Demande>
-    watch: UseFormWatch<Demande>
-    setValue: UseFormSetValue<Demande>
-    validateField: (fieldName: string, value: string | number) => void
-    validateRegexField: (fieldName: string, value: string, regex: RegExp, errorMessage: string) => void
+    validationErrors: FieldErrors<DemandeFormData>
+    items: FieldArrayWithId<DemandeFormData, "items", "id">[]
+    register: UseFormRegister<DemandeFormData>
+    watch: UseFormWatch<DemandeFormData>
+    setValue: UseFormSetValue<DemandeFormData>
     onAddItem: () => void
     onCancelAddItem: () => void
     onDeleteItem: (index: number) => void
@@ -31,8 +30,6 @@ export function ItemsTable({
     register,
     watch,
     setValue,
-    validateField,
-    validateRegexField,
     onAddItem,
     onCancelAddItem,
     onDeleteItem,
@@ -111,10 +108,9 @@ export function ItemsTable({
                                         <Select
                                             onValueChange={(value) => {
                                                 setValue(`items.${items.length}.service`, value)
-                                                validateField(`items.${items.length}.service`, value)
                                             }}
                                         >
-                                            <SelectTrigger className={validationErrors[`items.${items.length}.service`] ? 'border-red-500' : ''}>
+                                            <SelectTrigger className={validationErrors.items?.[items.length]?.service ? 'border-red-500' : ''}>
                                                 <SelectValue placeholder="Sélectionner un service" />
                                             </SelectTrigger>
                                             <SelectContent>
@@ -125,22 +121,18 @@ export function ItemsTable({
                                                 ))}
                                             </SelectContent>
                                         </Select>
-                                        {validationErrors[`items.${items.length}.service`] && (
-                                            <p className="text-red-500 text-xs mt-1">{validationErrors[`items.${items.length}.service`]}</p>
+                                        {validationErrors.items?.[items.length]?.service && (
+                                            <p className="text-red-500 text-xs mt-1">{validationErrors.items[items.length]?.service?.message}</p>
                                         )}
                                     </TableCell>
                                     <TableCell>
                                         <Input
                                             placeholder="BudgetType (ex: B29, B105, H)"
                                             {...register(`items.${items.length}.budgetType`)}
-                                            className={validationErrors[`items.${items.length}.budgetType`] ? 'border-red-500' : ''}
-                                            onBlur={(e) => validateRegexField(`items.${items.length}.budgetType`, e.target.value, /^(B\d{1,4}|H)$/, "Le type de budget doit être 'H' ou correspondre au format 'B29', 'B105', etc.")}
-                                            onChange={(e) => {
-                                                validateRegexField(`items.${items.length}.budgetType`, e.target.value, /^(B\d{1,4}|H)$/, "Le type de budget doit être 'H' ou correspondre au format 'B29', 'B105', etc.")
-                                            }}
+                                            className={validationErrors.items?.[items.length]?.budgetType ? 'border-red-500' : ''}
                                         />
-                                        {validationErrors[`items.${items.length}.budgetType`] && (
-                                            <p className="text-red-500 text-xs mt-1">{validationErrors[`items.${items.length}.budgetType`]}</p>
+                                        {validationErrors.items?.[items.length]?.budgetType && (
+                                            <p className="text-red-500 text-xs mt-1">{validationErrors.items[items.length]?.budgetType?.message}</p>
                                         )}
                                     </TableCell>
                                     <TableCell>
@@ -170,16 +162,10 @@ export function ItemsTable({
                                         <Input
                                             placeholder="Désignation"
                                             {...register(`items.${items.length}.description`)}
-                                            className={validationErrors[`items.${items.length}.description`] ? 'border-red-500' : ''}
-                                            onBlur={(e) => validateField(`items.${items.length}.description`, e.target.value)}
-                                            onChange={(e) => {
-                                                if (validationErrors[`items.${items.length}.description`]) {
-                                                    validateField(`items.${items.length}.description`, e.target.value)
-                                                }
-                                            }}
+                                            className={validationErrors.items?.[items.length]?.description ? 'border-red-500' : ''}
                                         />
-                                        {validationErrors[`items.${items.length}.description`] && (
-                                            <p className="text-red-500 text-xs mt-1">{validationErrors[`items.${items.length}.description`]}</p>
+                                        {validationErrors.items?.[items.length]?.description && (
+                                            <p className="text-red-500 text-xs mt-1">{validationErrors.items[items.length]?.description?.message}</p>
                                         )}
                                     </TableCell>
                                     <TableCell>
@@ -188,8 +174,7 @@ export function ItemsTable({
                                             min="0"
                                             placeholder="1"
                                             {...register(`items.${items.length}.quantity`, { valueAsNumber: true })}
-                                            className={validationErrors[`items.${items.length}.quantity`] ? 'border-red-500' : ''}
-                                            onBlur={(e) => validateField(`items.${items.length}.quantity`, Number(e.target.value))}
+                                            className={validationErrors.items?.[items.length]?.quantity ? 'border-red-500' : ''}
                                             onChange={(e) => {
                                                 let quantity = Number(e.target.value) || 0
 
@@ -202,14 +187,10 @@ export function ItemsTable({
                                                 const calculatedPrice = quantity * unitPrice
 
                                                 setValue(`items.${items.length}.price`, calculatedPrice)
-
-                                                if (validationErrors[`items.${items.length}.quantity`]) {
-                                                    validateField(`items.${items.length}.quantity`, quantity)
-                                                }
                                             }}
                                         />
-                                        {validationErrors[`items.${items.length}.quantity`] && (
-                                            <p className="text-red-500 text-xs mt-1">{validationErrors[`items.${items.length}.quantity`]}</p>
+                                        {validationErrors.items?.[items.length]?.quantity && (
+                                            <p className="text-red-500 text-xs mt-1">{validationErrors.items[items.length]?.quantity?.message}</p>
                                         )}
                                     </TableCell>
                                     <TableCell>
@@ -219,8 +200,7 @@ export function ItemsTable({
                                             step="0.01"
                                             placeholder="0.00"
                                             {...register(`items.${items.length}.unitPrice`, { valueAsNumber: true })}
-                                            className={validationErrors[`items.${items.length}.unitPrice`] ? 'border-red-500' : ''}
-                                            onBlur={(e) => validateField(`items.${items.length}.unitPrice`, Number(e.target.value))}
+                                            className={validationErrors.items?.[items.length]?.unitPrice ? 'border-red-500' : ''}
                                             onChange={(e) => {
                                                 let unitPrice = Number(e.target.value) || 0
 
@@ -233,14 +213,10 @@ export function ItemsTable({
                                                 const calculatedPrice = quantity * unitPrice
 
                                                 setValue(`items.${items.length}.price`, calculatedPrice)
-
-                                                if (validationErrors[`items.${items.length}.unitPrice`]) {
-                                                    validateField(`items.${items.length}.unitPrice`, unitPrice)
-                                                }
                                             }}
                                         />
-                                        {validationErrors[`items.${items.length}.unitPrice`] && (
-                                            <p className="text-red-500 text-xs mt-1">{validationErrors[`items.${items.length}.unitPrice`]}</p>
+                                        {validationErrors.items?.[items.length]?.unitPrice && (
+                                            <p className="text-red-500 text-xs mt-1">{validationErrors.items[items.length]?.unitPrice?.message}</p>
                                         )}
                                     </TableCell>
                                     <TableCell>

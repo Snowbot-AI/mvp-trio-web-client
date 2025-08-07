@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Demande } from './types';
+import { DemandeFormData } from './validation-schema';
 import { buildApiUrl, API_CONFIG } from '../../lib/api-config';
 
 // Constante pour le token d'authentification
@@ -19,7 +19,7 @@ const createHeaders = (contentType?: string) => {
 };
 
 // Fonction utilitaire pour créer un FormData équivalent à la commande curl
-const createFormDataFromJson = (jsonData: Demande, files?: File[]): FormData => {
+const createFormDataFromJson = (jsonData: DemandeFormData, files?: File[]): FormData => {
   const formData = new FormData()
 
   // Créer un fichier JSON à partir des données (équivalent à @test.json)
@@ -42,7 +42,7 @@ const createFormDataFromJson = (jsonData: Demande, files?: File[]): FormData => 
 }
 
 // Fonctions API utilisant la configuration
-const fetchDemandes = async (): Promise<Demande[]> => {
+const fetchDemandes = async (): Promise<DemandeFormData[]> => {
   const url = buildApiUrl(API_CONFIG.endpoints.demandes)
   console.log("API URL:", url)
   const response = await fetch(url, {
@@ -54,7 +54,7 @@ const fetchDemandes = async (): Promise<Demande[]> => {
   return response.json();
 };
 
-const fetchDemandeById = async (id: string): Promise<Demande> => {
+const fetchDemandeById = async (id: string): Promise<DemandeFormData> => {
   const response = await fetch(buildApiUrl(API_CONFIG.endpoints.demande(id)), {
     headers: createHeaders(),
   });
@@ -64,7 +64,7 @@ const fetchDemandeById = async (id: string): Promise<Demande> => {
   return response.json();
 };
 
-const updateDemande = async (formData: FormData): Promise<Demande> => {
+const updateDemande = async (formData: FormData): Promise<DemandeFormData> => {
   // Extraire l'ID depuis les données du formulaire
   const requestPart = formData.get('request')
   let id: string
@@ -92,8 +92,8 @@ const updateDemande = async (formData: FormData): Promise<Demande> => {
 };
 
 // Nouvelle fonction équivalente à la commande curl
-const updateDemandeWithJsonFile = async (input: { requests: Demande, files: (File | undefined)[] }): Promise<Demande> => {
-  let jsonData: Demande;
+const updateDemandeWithJsonFile = async (input: { requests: DemandeFormData, files: (File | undefined)[] }): Promise<DemandeFormData> => {
+  let jsonData: DemandeFormData;
   let files: File[] | undefined
 
   // Vérifier si l'input contient data et files ou si c'est directement les données

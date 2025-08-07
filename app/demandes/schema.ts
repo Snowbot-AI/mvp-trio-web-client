@@ -41,7 +41,7 @@ const billingSchema = z.object({
   name: z.string().min(1, "Le nom de facturation est requis"),
   address: z.string().min(1, "L'adresse de facturation est requise"),
   emails: z.array(
-    z.string().email("Format d'email invalide")
+    z.email("Format d'email invalide")
   ).min(1, "Au moins un email est requis"),
   siret: z.string().regex(/^\d{14}$/, "Le SIRET doit contenir 14 chiffres")
 })
@@ -63,7 +63,7 @@ const providerSchema = z.object({
     /^(?:(?:\+|00)33|0)\s*[1-9](?:[\s.-]*\d{2}){4}$/,
     "Format de téléphone invalide"
   ).nullable().optional(),
-  email: z.string().email("Format d'email invalide").nullable().optional()
+  email: z.email("Format d'email invalide").nullable().optional()
 })
 
 // Schéma principal pour la demande (plus permissif pour la compatibilité)

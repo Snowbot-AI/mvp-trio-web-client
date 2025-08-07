@@ -4,14 +4,23 @@ import type React from "react"
 import { useState, useEffect } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { useForm, useFieldArray } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
 import { Button } from "@/components/ui/button"
 import { Toaster } from "@/components/ui/sonner"
 import { toast } from "sonner"
 import { ArrowLeft } from "lucide-react"
-import type { Demande, FileType, StatusDemande } from "../types"
+import type { PurchaseRequestStatus } from "../types"
 import { getStationName } from "../types"
 import { useDemande, useUpdateDemandeWithJsonFile } from "../hooks"
 import { buildApiUrl } from "@/lib/api-config"
+import { DemandeSchema, type DemandeFormData } from "../validation-schema"
+
+type FileType = {
+  id?: string;
+  name: string;
+  category: string;
+  uploadInstant: string;
+}
 
 // Composants refactorisés
 import { StatusBadge } from "./components/StatusBadge"
@@ -22,9 +31,6 @@ import { ItemsTable } from "./components/ItemsTable"
 import { ContactInfoCards } from "./components/ContactInfoCards"
 import { FilesSection } from "./components/FilesSection"
 import { PDFModal } from "./components/PDFModal"
-
-// Hooks personnalisés
-import { useValidation } from "./hooks/useValidation"
 
 export default function DetailDemande() {
   const router = useRouter()
@@ -44,17 +50,9 @@ export default function DetailDemande() {
   const [moreInfoComment, setMoreInfoComment] = useState("")
   const [filesToUpload, setFilesToUpload] = useState<File[]>([])
   const [fichierASupprimer, setFichierASupprimer] = useState<{ id: string; name: string } | null>(null)
+  const [isScrolled, setIsScrolled] = useState(false)
 
-  // Hooks personnalisés
-  const {
-    validationErrors,
-    validateField,
-    validateRegexField,
-    validateEmailField,
-    clearValidationErrors,
-  } = useValidation()
-
-  // React Hook Form avec validation en temps réel
+  // React Hook Form avec validation Zod
   const {
     register,
     handleSubmit,
@@ -62,9 +60,15 @@ export default function DetailDemande() {
     reset,
     watch,
     setValue,
-  } = useForm<Demande>({
+    formState: { errors },
+  } = useForm<DemandeFormData>({
+    resolver: zodResolver(DemandeSchema),
     mode: 'onChange',
-    defaultValues: demande || undefined
+    defaultValues: demande ? {
+      ...demande,
+      priority: demande.priority || "LOW",
+      status: demande.status || "BROUILLON" as PurchaseRequestStatus,
+    } : undefined
   })
 
   const { fields: items } = useFieldArray({
@@ -79,11 +83,20 @@ export default function DetailDemande() {
     }
   }, [demande, reset])
 
-  // Handlers
-  const gererSauvegarde = (data: Demande, files?: File[]) => {
-    clearValidationErrors()
+  // Détecter le scroll pour changer l'apparence du header
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollTop = window.scrollY
+      setIsScrolled(scrollTop > 10)
+    }
 
-    const dataToSave = { ...data }
+    window.addEventListener('scroll', handleScroll)
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
+
+  // Handlers
+  const gererSauvegarde = (data: DemandeFormData, files?: File[]) => {
+    const dataToSave = data
     if (ajoutArticle) {
       const currentItems = data.items || []
       const newItemIndex = currentItems.length
@@ -132,14 +145,15 @@ export default function DetailDemande() {
   }
 
   const gererAnnulation = () => {
-    reset(demande || undefined)
+    if (demande) {
+      reset(demande)
+    }
     setModeEdition(false)
     setAjoutArticle(false)
     setFilesToUpload([])
-    clearValidationErrors()
   }
 
-  const gererChangementStatut = (nouveauStatut: StatusDemande) => {
+  const gererChangementStatut = (nouveauStatut: PurchaseRequestStatus) => {
     const currentData = watch()
     const demandeUpdated = { ...currentData, status: nouveauStatut }
 
@@ -245,9 +259,9 @@ export default function DetailDemande() {
   }
 
   // Fonction wrapper pour la sauvegarde avec extraction des fichiers
-  const handleSave = (data: Demande) => {
+  const handleSave = handleSubmit((data: DemandeFormData) => {
     gererSauvegarde(data, filesToUpload)
-  }
+  })
 
   // Fonction d'export PDF
   const handleExportPDF = () => {
@@ -306,39 +320,47 @@ export default function DetailDemande() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6 pt-8">
-      <div className="max-w-7xl mx-auto space-y-6">
-        {/* Header en haut */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Button variant="outline" onClick={() => router.push("/")}>
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Retour
-            </Button>
-          </div>
-          <div className="flex items-center gap-4">
-            <ActionButtons
-              demande={demande}
-              modeEdition={modeEdition}
-              validationErrors={validationErrors}
-              isPending={updateDemandeWithJsonFileMutation.isPending}
-              showRejectDialog={showRejectDialog}
-              showMoreInfoDialog={showMoreInfoDialog}
-              rejectComment={rejectComment}
-              moreInfoComment={moreInfoComment}
-              onEdit={() => setModeEdition(true)}
-              onCancel={gererAnnulation}
-              onSave={handleSubmit(handleSave)}
-              onStatusChange={gererChangementStatut}
-              onRejectCommentChange={setRejectComment}
-              onMoreInfoCommentChange={setMoreInfoComment}
-              onShowRejectDialogChange={setShowRejectDialog}
-              onShowMoreInfoDialogChange={setShowMoreInfoDialog}
-              onExport={handleExportPDF}
-            />
+    <div className="min-h-screen bg-gray-50">
+      {/* Header sticky en haut */}
+      <div className={`sticky top-0 z-50 transition-all duration-300 ${isScrolled
+        ? 'bg-white/95 backdrop-blur-sm border-b border-gray-200 shadow-sm'
+        : 'bg-transparent'
+        }`}>
+        <div className="max-w-7xl mx-auto px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <Button variant="outline" onClick={() => router.push("/")}>
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Retour
+              </Button>
+            </div>
+            <div className="flex items-center gap-4">
+              <ActionButtons
+                demande={demande}
+                modeEdition={modeEdition}
+                validationErrors={errors}
+                isPending={updateDemandeWithJsonFileMutation.isPending}
+                showRejectDialog={showRejectDialog}
+                showMoreInfoDialog={showMoreInfoDialog}
+                rejectComment={rejectComment}
+                moreInfoComment={moreInfoComment}
+                onEdit={() => setModeEdition(true)}
+                onCancel={gererAnnulation}
+                onSave={handleSave}
+                onStatusChange={gererChangementStatut}
+                onRejectCommentChange={setRejectComment}
+                onMoreInfoCommentChange={setMoreInfoComment}
+                onShowRejectDialogChange={setShowRejectDialog}
+                onShowMoreInfoDialogChange={setShowMoreInfoDialog}
+                onExport={handleExportPDF}
+              />
+            </div>
           </div>
         </div>
+      </div>
 
+      {/* Contenu principal avec padding ajusté */}
+      <div className="max-w-7xl mx-auto p-6 space-y-6">
         {/* Titre */}
         <div className="text-center py-8">
           <h1 className="text-3xl font-bold text-gray-900">{`Demande d'achat Trio Pyrénées ${getStationName(demande.codeStation)}`}</h1>
@@ -355,11 +377,10 @@ export default function DetailDemande() {
               <GeneralInfoCard
                 demande={demande}
                 modeEdition={modeEdition}
-                validationErrors={validationErrors}
+                validationErrors={errors}
                 register={register}
                 watch={watch}
                 setValue={setValue}
-                validateField={(fieldName, value) => validateField(fieldName as keyof Demande, value, watch, setValue)}
               />
             </div>
             <div className="space-y-6">
@@ -372,13 +393,11 @@ export default function DetailDemande() {
             demande={demande}
             modeEdition={modeEdition}
             ajoutArticle={ajoutArticle}
-            validationErrors={validationErrors}
+            validationErrors={errors}
             items={items}
             register={register}
             watch={watch}
             setValue={setValue}
-            validateField={(fieldName, value) => validateField(fieldName as keyof Demande, value, watch, setValue)}
-            validateRegexField={(fieldName, value, regex, errorMessage) => validateRegexField(fieldName as keyof Demande, value, regex, errorMessage, setValue)}
             onAddItem={() => setAjoutArticle(true)}
             onCancelAddItem={() => setAjoutArticle(false)}
             onDeleteItem={supprimerArticle}
@@ -388,11 +407,10 @@ export default function DetailDemande() {
           <ContactInfoCards
             demande={demande}
             modeEdition={modeEdition}
-            validationErrors={validationErrors}
+            validationErrors={errors}
             register={register}
-            validateField={(fieldName, value) => validateField(fieldName as keyof Demande, value, watch, setValue)}
-            validateRegexField={(fieldName, value, regex, errorMessage) => validateRegexField(fieldName as keyof Demande, value, regex, errorMessage, setValue)}
-            validateEmailField={(fieldName, value) => validateEmailField(fieldName as keyof Demande, value, setValue)}
+            watch={watch}
+            setValue={setValue}
           />
 
           {/* 4ème partie : Documents joints */}

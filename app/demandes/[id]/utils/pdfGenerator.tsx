@@ -1,6 +1,6 @@
 import { Document, Page, Text, View, StyleSheet, Font } from '@react-pdf/renderer'
-import { Demande } from '../../types'
 import { getStationName } from '../../types'
+import { DemandeFormData } from '../../validation-schema'
 
 // Enregistrer les polices (optionnel - utilise les polices par défaut si non disponible)
 Font.register({
@@ -169,7 +169,7 @@ const getStatusLabel = (status: string) => {
 }
 
 // Composant principal du PDF
-export const DemandePDF = ({ demande }: { demande: Demande }) => (
+export const DemandePDF = ({ demande }: { demande: DemandeFormData }) => (
     <Document>
         <Page size="A4" style={styles.page}>
             {/* En-tête */}
@@ -201,7 +201,7 @@ export const DemandePDF = ({ demande }: { demande: Demande }) => (
 
                 <View style={styles.row}>
                     <Text style={styles.label}>Date de livraison souhaitée:</Text>
-                    <Text style={styles.value}>{formatDate(demande.deliveryDate)}</Text>
+                    <Text style={styles.value}>{formatDate(demande.deliveryDate || null)}</Text>
                 </View>
 
                 <View style={styles.row}>

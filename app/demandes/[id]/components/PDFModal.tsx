@@ -4,12 +4,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button'
 import { Download } from 'lucide-react'
 import { DemandePDF } from '../utils/pdfGenerator'
-import { Demande } from '../../types'
+import { DemandeFormData } from '../../validation-schema'
 
 interface PDFModalProps {
     isOpen: boolean
     onClose: () => void
-    demande: Demande
+    demande: DemandeFormData
 }
 
 export function PDFModal({ isOpen, onClose, demande }: PDFModalProps) {

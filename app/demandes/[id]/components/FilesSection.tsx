@@ -1,24 +1,22 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
-import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
-import { File, Upload, Trash2 } from "lucide-react"
-import { FileType, type Demande } from "../../types"
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
+import { FileText, Upload, Trash2 } from "lucide-react"
 import { UseFormWatch } from "react-hook-form"
+import { DemandeFormData } from "../../validation-schema"
+
+type FileType = {
+    id?: string;
+    name: string;
+    category: string;
+    uploadInstant: string;
+}
 
 interface FilesSectionProps {
-    demande: Demande
+    demande: DemandeFormData
     modeEdition: boolean
-    watch: UseFormWatch<Demande>
+    watch: UseFormWatch<DemandeFormData>
     fichierASupprimer: { id: string; name: string } | null
     onUploadFile: (event: React.ChangeEvent<HTMLInputElement>, category: string) => void
     onDownloadFile: (fileId: string, fileName: string) => void
@@ -42,7 +40,7 @@ export function FilesSection({
                 <Card>
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
-                            <File className="h-5 w-5" />
+                            <FileText className="h-5 w-5" />
                             Devis
                         </CardTitle>
                     </CardHeader>
@@ -77,7 +75,7 @@ export function FilesSection({
                             {watch("files")?.filter((fichier: FileType) => fichier.category === "quotations").map((fichier: FileType) => (
                                 <div key={fichier.id} className="flex items-center justify-between p-3 border rounded-lg">
                                     <div className="flex items-center gap-3">
-                                        <File className="h-5 w-5 text-gray-500" />
+                                        <FileText className="h-5 w-5 text-gray-500" />
                                         <div>
                                             <p className="font-medium">{fichier.name}</p>
                                             <p className="text-sm text-gray-500">{new Date(fichier.uploadInstant).toLocaleDateString("fr-FR")}</p>
@@ -111,7 +109,7 @@ export function FilesSection({
                 <Card>
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
-                            <File className="h-5 w-5" />
+                            <FileText className="h-5 w-5" />
                             Factures
                         </CardTitle>
                     </CardHeader>
@@ -146,7 +144,7 @@ export function FilesSection({
                             {watch("files")?.filter((fichier: FileType) => fichier.category === "invoices").map((fichier: FileType) => (
                                 <div key={fichier.id} className="flex items-center justify-between p-3 border rounded-lg">
                                     <div className="flex items-center gap-3">
-                                        <File className="h-5 w-5 text-gray-500" />
+                                        <FileText className="h-5 w-5 text-gray-500" />
                                         <div>
                                             <p className="font-medium">{fichier.name}</p>
                                             <p className="text-sm text-gray-500">{new Date(fichier.uploadInstant).toLocaleDateString("fr-FR")}</p>
