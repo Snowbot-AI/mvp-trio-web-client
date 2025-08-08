@@ -520,7 +520,7 @@ export default function DetailDemande() {
         </div>
 
         {/* Contenu principal - Layout vertical */}
-        <div className="space-y-6">
+        <div className="space-y-6 sm:px-6">
           {/* 1ère partie : Informations générales avec demandeur et récap financier */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2">
@@ -576,7 +576,7 @@ export default function DetailDemande() {
           />
 
           {/* 5ème partie : Commentaires */}
-          <div className="bg-white rounded-lg shadow p-6">
+          <div className="bg-white rounded-lg shadow p-6 mb-8">
             <h3 className="text-lg font-semibold mb-4">Commentaire</h3>
             {modeEdition ? (
               <div className="space-y-2">

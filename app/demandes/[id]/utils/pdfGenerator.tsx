@@ -300,7 +300,7 @@ export const DemandePDF = ({ demande }: { demande: DemandeFormData }) => (
                 <View style={styles.logoContainer}>
                     <Image
                         style={styles.logoImage}
-                        src="/logoTrioBlanc.png"
+                        src="/logoTrio.png"
                     />
                 </View>
 
