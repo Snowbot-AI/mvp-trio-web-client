@@ -158,7 +158,7 @@ export function ActionButtons({
 
     if (modeEdition) {
         return (
-            <>
+            <div className="flex flex-wrap items-center gap-2">
                 <Button variant="outline" onClick={onCancel}>
                     <X className="h-4 w-4 mr-2" />
                     Annuler
@@ -203,15 +203,15 @@ export function ActionButtons({
                     {isPending ? 'Sauvegarde...' :
                         hasValidationErrors() ? `Erreurs de validation (${getValidationErrorCount()})` : 'Sauvegarder'}
                 </Button>
-            </>
+            </div>
         )
     }
 
     return (
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
             {/* Actions selon le statut */}
             {demande.status === PurchaseRequestStatus.A_VERIFIER && (
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                     <AlertDialog>
                         <AlertDialogTrigger asChild>
                             <Button className="bg-green-600 hover:bg-green-700">

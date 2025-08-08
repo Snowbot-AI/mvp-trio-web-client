@@ -76,14 +76,14 @@ export function ItemsTable({
                                 <TableHead>Référence devis</TableHead>
                                 <TableHead>Désignation</TableHead>
                                 <TableHead>Qté</TableHead>
-                                <TableHead>Prix unit.</TableHead>
-                                <TableHead>Montant</TableHead>
+                                <TableHead>Prix unit. HT</TableHead>
+                                <TableHead>Montant HT</TableHead>
                                 {modeEdition && <TableHead>Actions</TableHead>}
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {items.map((article, index) => (
-                                <TableRow key={article.description}>
+                                <TableRow key={article.id}>
                                     <TableCell>{article.service}</TableCell>
                                     <TableCell>{article.budgetType}</TableCell>
                                     <TableCell>{article.itemType || '-'}</TableCell>

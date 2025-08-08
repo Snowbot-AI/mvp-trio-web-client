@@ -61,6 +61,7 @@ export default function DetailDemande() {
     reset,
     watch,
     setValue,
+    unregister,
     formState: { errors },
   } = useForm<DemandeFormData>({
     resolver: zodResolver(DemandeSchema),
@@ -72,10 +73,30 @@ export default function DetailDemande() {
     } : undefined
   })
 
-  const { fields: items } = useFieldArray({
+  const { fields: items, remove } = useFieldArray({
     control,
     name: "items"
   })
+
+  // Recalculer les totaux HT à partir des items et des frais saisis
+  const watchedItems = watch("items") ?? []
+  const participationLivraison = watch("total.deliveryTotal") ?? 0
+  const fraisFacturation = watch("total.billingFees") ?? 0
+
+  const orderTotal = watchedItems.reduce((acc: number, item: { price?: number; quantity?: number; unitPrice?: number }) => {
+    const linePrice = typeof item?.price === 'number'
+      ? item.price
+      : ((item?.quantity ?? 0) * (item?.unitPrice ?? 0))
+    return acc + (Number.isFinite(linePrice) ? linePrice : 0)
+  }, 0)
+
+  const totalHT = orderTotal + (participationLivraison ?? 0) + (fraisFacturation ?? 0)
+
+  // Propager les totaux dans le form state pour cohérence
+  useEffect(() => {
+    setValue("total.orderTotal", orderTotal)
+    setValue("total.total", totalHT)
+  }, [orderTotal, totalHT, setValue])
 
   // Réinitialiser le formulaire quand les données arrivent
   useEffect(() => {
@@ -295,9 +316,25 @@ export default function DetailDemande() {
   }
 
   const supprimerArticle = (index: number) => {
-    const currentData = watch()
-    const updatedItems = currentData.items?.filter((_, i) => i !== index) || []
-    setValue('items', updatedItems)
+    remove(index)
+  }
+
+  const annulerAjoutArticle = () => {
+    setAjoutArticle(false)
+    const newIndex = items.length
+    unregister(`items.${newIndex}`)
+  }
+
+  const handleSaveClick = () => {
+    if (ajoutArticle) {
+      const desc = watch(`items.${items.length}.description`) || ""
+      const svc = watch(`items.${items.length}.service`) || ""
+      const hasAnyValue = `${desc}${svc}`.trim().length > 0
+      if (!hasAnyValue) {
+        annulerAjoutArticle()
+      }
+    }
+    handleSave()
   }
 
   // Handlers pour les fichiers
@@ -476,41 +513,39 @@ export default function DetailDemande() {
         : 'bg-transparent'
         }`}>
         <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
+          <div className="flex items-center justify-between gap-4">
+            <div>
               <Button variant="outline" onClick={() => router.push("/")}>
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Retour
               </Button>
             </div>
-            <div className="flex items-center gap-4">
-              <ActionButtons
-                demande={demande}
-                modeEdition={modeEdition}
-                validationErrors={modeEdition ? errors : {}}
-                isPending={updateDemandeWithJsonFileMutation.isPending}
-                showRejectDialog={showRejectDialog}
-                showMoreInfoDialog={showMoreInfoDialog}
-                rejectComment={rejectComment}
-                moreInfoComment={moreInfoComment}
-                onEdit={() => setModeEdition(true)}
-                onCancel={gererAnnulation}
-                onSave={handleSave}
-                onStatusChange={gererChangementStatut}
-                onRejectCommentChange={setRejectComment}
-                onMoreInfoCommentChange={setMoreInfoComment}
-                onShowRejectDialogChange={setShowRejectDialog}
-                onShowMoreInfoDialogChange={setShowMoreInfoDialog}
-                onExport={handleExportPDF}
-                onValidateAndSubmit={handleValidateAndSubmit}
-              />
-            </div>
+            <ActionButtons
+              demande={demande}
+              modeEdition={modeEdition}
+              validationErrors={modeEdition ? errors : {}}
+              isPending={updateDemandeWithJsonFileMutation.isPending}
+              showRejectDialog={showRejectDialog}
+              showMoreInfoDialog={showMoreInfoDialog}
+              rejectComment={rejectComment}
+              moreInfoComment={moreInfoComment}
+              onEdit={() => setModeEdition(true)}
+              onCancel={gererAnnulation}
+              onSave={handleSaveClick}
+              onStatusChange={gererChangementStatut}
+              onRejectCommentChange={setRejectComment}
+              onMoreInfoCommentChange={setMoreInfoComment}
+              onShowRejectDialogChange={setShowRejectDialog}
+              onShowMoreInfoDialogChange={setShowMoreInfoDialog}
+              onExport={handleExportPDF}
+              onValidateAndSubmit={handleValidateAndSubmit}
+            />
           </div>
         </div>
       </div>
 
       {/* Contenu principal avec padding ajusté */}
-      <div className="max-w-7xl mx-auto px  -6 space-y-6">
+      <div className="max-w-7xl mx-auto space-y-6">
         {/* Titre */}
         <div className="text-center py-8">
           <h1 className="text-3xl font-bold text-gray-900">{`Demande d'achat Trio Pyrénées ${getStationName(demande.codeStation)}`}</h1>
@@ -520,7 +555,7 @@ export default function DetailDemande() {
         </div>
 
         {/* Contenu principal - Layout vertical */}
-        <div className="space-y-6 sm:px-6">
+        <div className="space-y-6 px-6">
           {/* 1ère partie : Informations générales avec demandeur et récap financier */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2">
@@ -534,7 +569,12 @@ export default function DetailDemande() {
               />
             </div>
             <div className="space-y-6">
-              <FinancialSummaryCard demande={demande} />
+              <FinancialSummaryCard
+                orderTotal={orderTotal}
+                deliveryTotal={participationLivraison}
+                billingFees={fraisFacturation}
+                total={totalHT}
+              />
             </div>
           </div>
 
@@ -549,7 +589,7 @@ export default function DetailDemande() {
             watch={watch}
             setValue={setValue}
             onAddItem={() => setAjoutArticle(true)}
-            onCancelAddItem={() => setAjoutArticle(false)}
+            onCancelAddItem={annulerAjoutArticle}
             onDeleteItem={supprimerArticle}
           />
 
