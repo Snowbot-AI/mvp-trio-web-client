@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Toaster } from "@/components/ui/sonner"
 import { toast } from "sonner"
 import { ArrowLeft } from "lucide-react"
-import type { PurchaseRequestStatus } from "../types"
+import { PurchaseRequestStatus } from "../types"
 import { getStationName } from "../types"
 import { useDemande, useUpdateDemandeWithJsonFile } from "../hooks"
 import { buildApiUrl } from "@/lib/api-config"
@@ -31,6 +31,7 @@ import { ItemsTable } from "./components/ItemsTable"
 import { ContactInfoCards } from "./components/ContactInfoCards"
 import { FilesSection } from "./components/FilesSection"
 import { PDFModal } from "./components/PDFModal"
+
 
 export default function DetailDemande() {
   const router = useRouter()
@@ -155,16 +156,132 @@ export default function DetailDemande() {
 
   const gererChangementStatut = (nouveauStatut: PurchaseRequestStatus) => {
     const currentData = watch()
-    const demandeUpdated = { ...currentData, status: nouveauStatut }
+
+    // Si on passe en mode "A_VERIFIER" (soumission), faire la validation
+    if (nouveauStatut === PurchaseRequestStatus.A_VERIFIER) {
+      // Valider les données avec le schéma Zod
+      const validationResult = DemandeSchema.safeParse(currentData)
+
+      if (!validationResult.success) {
+        // Passer automatiquement en mode édition
+        setModeEdition(true)
+
+        // Afficher un toast informatif
+        toast.info(
+          <div>
+            <div className="font-bold mb-2">Informations manquantes</div>
+            <p className="text-sm">La demande a été mise en mode édition pour vous permettre de corriger les erreurs.</p>
+          </div>,
+          {
+            duration: 5000,
+            style: {
+              background: 'white',
+              color: '#3b82f6',
+              border: '1px solid #3b82f6',
+              maxWidth: '400px'
+            }
+          }
+        )
+        return // Ne pas continuer si validation échoue
+      }
+    }
+
+    // Préparer les données à sauvegarder
+    let demandeUpdated = { ...currentData, status: nouveauStatut }
+
+    // Si on demande plus d'informations, ajouter le commentaire
+    if (nouveauStatut === PurchaseRequestStatus.A_MODIFIER && moreInfoComment.trim()) {
+      const currentComment = currentData.comment || ""
+      const newComment = currentComment
+        ? `${currentComment}\n\n--- Demande d'informations supplémentaires ---\n${moreInfoComment}`
+        : `--- Demande d'informations supplémentaires ---\n${moreInfoComment}`
+
+      demandeUpdated = { ...demandeUpdated, comment: newComment }
+    }
+
+    // Si on rejette, ajouter le commentaire de rejet
+    if (nouveauStatut === PurchaseRequestStatus.REJETEE && rejectComment.trim()) {
+      const currentComment = currentData.comment || ""
+      const newComment = currentComment
+        ? `${currentComment}\n\n--- Raison du rejet ---\n${rejectComment}`
+        : `--- Raison du rejet ---\n${rejectComment}`
+
+      demandeUpdated = { ...demandeUpdated, comment: newComment }
+    }
 
     updateDemandeWithJsonFileMutation.mutate({ requests: demandeUpdated, files: [] }, {
       onSuccess: () => {
         console.log("Statut changé:", nouveauStatut)
-        toast.success("Statut changé avec succès !")
+        if (nouveauStatut === PurchaseRequestStatus.A_VERIFIER) {
+          toast.success("Demande soumise avec succès !")
+        } else {
+          toast.success("Statut changé avec succès !")
+        }
       },
       onError: (error) => {
         console.error("Erreur lors du changement de statut:", error)
         toast.error(error.message || "Erreur lors du changement de statut", {
+          duration: 4000,
+          style: {
+            background: 'white',
+            color: '#ef4444',
+            fontWeight: 'bold',
+            border: '1px solid #ef4444'
+          }
+        })
+      }
+    })
+  }
+
+  // Fonction spécifique pour la validation lors de la soumission en mode brouillon
+  const handleValidateAndSubmit = () => {
+    const currentData = watch()
+
+    // Valider les données avec le schéma Zod
+    const validationResult = DemandeSchema.safeParse(currentData)
+
+    if (!validationResult.success) {
+      // Afficher les erreurs de validation dans un toast
+      const errorMessages = validationResult.error.issues.map((issue) => {
+        const fieldName = issue.path?.join('.') || '(champ inconnu)';
+        return `${fieldName}: ${issue.message}`;
+      });
+
+      toast.error(
+        <div>
+          <div className="font-bold mb-2">Erreurs de validation ({errorMessages.length}) :</div>
+          <ul className="text-sm space-y-1">
+            {errorMessages.map((error: string, index: number) => (
+              <li key={index} className="flex items-start">
+                <span className="text-red-500 mr-1">•</span>
+                <span>{error}</span>
+              </li>
+            ))}
+          </ul>
+        </div>,
+        {
+          duration: 8000,
+          style: {
+            background: 'white',
+            color: '#ef4444',
+            border: '1px solid #ef4444',
+            maxWidth: '500px'
+          }
+        }
+      )
+      return // Ne pas continuer si validation échoue
+    }
+
+    // Si validation réussie, changer le statut
+    const demandeUpdated = { ...currentData, status: PurchaseRequestStatus.A_VERIFIER }
+
+    updateDemandeWithJsonFileMutation.mutate({ requests: demandeUpdated, files: [] }, {
+      onSuccess: () => {
+        toast.success("Demande soumise avec succès !")
+      },
+      onError: (error) => {
+        console.error("Erreur lors de la soumission:", error)
+        toast.error(error.message || "Erreur lors de la soumission", {
           duration: 4000,
           style: {
             background: 'white',
@@ -261,6 +378,38 @@ export default function DetailDemande() {
   // Fonction wrapper pour la sauvegarde avec extraction des fichiers
   const handleSave = handleSubmit((data: DemandeFormData) => {
     gererSauvegarde(data, filesToUpload)
+  }, (errors) => {
+    // Toujours afficher les erreurs de validation
+    const errorMessages = Object.keys(errors).map(key => {
+      const error = errors[key as keyof typeof errors]
+      if (error && typeof error === 'object' && 'message' in error) {
+        return `${key}: ${error.message}`
+      }
+      return `${key}: Erreur de validation`
+    })
+
+    toast.error(
+      <div>
+        <div className="font-bold mb-2">Erreurs de validation ({errorMessages.length}) :</div>
+        <ul className="text-sm space-y-1">
+          {errorMessages.map((error: string, index: number) => (
+            <li key={index} className="flex items-start">
+              <span className="text-red-500 mr-1">•</span>
+              <span>{error}</span>
+            </li>
+          ))}
+        </ul>
+      </div>,
+      {
+        duration: 8000,
+        style: {
+          background: 'white',
+          color: '#ef4444',
+          border: '1px solid #ef4444',
+          maxWidth: '500px'
+        }
+      }
+    )
   })
 
   // Fonction d'export PDF
@@ -338,7 +487,7 @@ export default function DetailDemande() {
               <ActionButtons
                 demande={demande}
                 modeEdition={modeEdition}
-                validationErrors={errors}
+                validationErrors={modeEdition ? errors : {}}
                 isPending={updateDemandeWithJsonFileMutation.isPending}
                 showRejectDialog={showRejectDialog}
                 showMoreInfoDialog={showMoreInfoDialog}
@@ -353,6 +502,7 @@ export default function DetailDemande() {
                 onShowRejectDialogChange={setShowRejectDialog}
                 onShowMoreInfoDialogChange={setShowMoreInfoDialog}
                 onExport={handleExportPDF}
+                onValidateAndSubmit={handleValidateAndSubmit}
               />
             </div>
           </div>
@@ -360,7 +510,7 @@ export default function DetailDemande() {
       </div>
 
       {/* Contenu principal avec padding ajusté */}
-      <div className="max-w-7xl mx-auto p-6 space-y-6">
+      <div className="max-w-7xl mx-auto px  -6 space-y-6">
         {/* Titre */}
         <div className="text-center py-8">
           <h1 className="text-3xl font-bold text-gray-900">{`Demande d'achat Trio Pyrénées ${getStationName(demande.codeStation)}`}</h1>
@@ -377,7 +527,7 @@ export default function DetailDemande() {
               <GeneralInfoCard
                 demande={demande}
                 modeEdition={modeEdition}
-                validationErrors={errors}
+                validationErrors={modeEdition ? errors : {}}
                 register={register}
                 watch={watch}
                 setValue={setValue}
@@ -393,7 +543,7 @@ export default function DetailDemande() {
             demande={demande}
             modeEdition={modeEdition}
             ajoutArticle={ajoutArticle}
-            validationErrors={errors}
+            validationErrors={modeEdition ? errors : {}}
             items={items}
             register={register}
             watch={watch}
@@ -407,7 +557,7 @@ export default function DetailDemande() {
           <ContactInfoCards
             demande={demande}
             modeEdition={modeEdition}
-            validationErrors={errors}
+            validationErrors={modeEdition ? errors : {}}
             register={register}
             watch={watch}
             setValue={setValue}
@@ -426,12 +576,25 @@ export default function DetailDemande() {
           />
 
           {/* 5ème partie : Commentaires */}
-          {demande.comment && (
-            <div className="bg-white rounded-lg shadow p-6">
-              <h3 className="text-lg font-semibold mb-2">Commentaire</h3>
-              <p className="text-sm">{demande.comment}</p>
-            </div>
-          )}
+          <div className="bg-white rounded-lg shadow p-6">
+            <h3 className="text-lg font-semibold mb-4">Commentaire</h3>
+            {modeEdition ? (
+              <div className="space-y-2">
+                <textarea
+                  {...register("comment")}
+                  placeholder="Ajouter un commentaire..."
+                  className="w-full min-h-[100px] p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-gray-400 resize-vertical"
+                />
+                {errors.comment && (
+                  <p className="text-sm text-red-600">{errors.comment.message}</p>
+                )}
+              </div>
+            ) : (
+              <p className="text-sm text-gray-600">
+                {demande.comment || "Aucun commentaire"}
+              </p>
+            )}
+          </div>
         </div>
       </div>
 

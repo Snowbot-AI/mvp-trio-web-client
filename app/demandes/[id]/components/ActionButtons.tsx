@@ -36,6 +36,7 @@ interface ActionButtonsProps {
     onShowRejectDialogChange: (show: boolean) => void
     onShowMoreInfoDialogChange: (show: boolean) => void
     onExport: () => void
+    onValidateAndSubmit?: () => void
 }
 
 export function ActionButtons({
@@ -56,6 +57,7 @@ export function ActionButtons({
     onShowRejectDialogChange,
     onShowMoreInfoDialogChange,
     onExport,
+    onValidateAndSubmit,
 }: ActionButtonsProps) {
     // Fonction pour vérifier s'il y a des erreurs de validation
     const hasValidationErrors = () => {
@@ -164,6 +166,7 @@ export function ActionButtons({
 
                 <Button
                     onClick={() => {
+                        // En mode édition, on fait toujours la validation avant la sauvegarde
                         if (hasValidationErrors()) {
                             // Afficher les erreurs dans un toast détaillé
                             const errorMessages = getValidationErrorMessages()
@@ -376,7 +379,15 @@ export function ActionButtons({
                         </AlertDialogHeader>
                         <AlertDialogFooter>
                             <AlertDialogCancel>Annuler</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => onStatusChange(PurchaseRequestStatus.A_VERIFIER)}>
+                            <AlertDialogAction onClick={() => {
+                                // En mode brouillon, utiliser la fonction de validation personnalisée
+                                if (demande.status === PurchaseRequestStatus.BROUILLON && onValidateAndSubmit) {
+                                    onValidateAndSubmit()
+                                } else {
+                                    // Pour les autres statuts, utiliser la fonction normale
+                                    onStatusChange(PurchaseRequestStatus.A_VERIFIER)
+                                }
+                            }}>
                                 Envoyer la demande
                             </AlertDialogAction>
                         </AlertDialogFooter>

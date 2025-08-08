@@ -18,10 +18,9 @@ import {
 } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { Search, CheckCircle, XCircle, Clock, Plus, Loader2, FileText, Edit } from "lucide-react"
-import { Textarea } from "@/components/ui/textarea"
 import { useRouter } from "next/navigation"
 import { getStationName, PurchaseRequestStatus, CodeStation } from "./types"
-import { useDemandes } from "./hooks"
+import { useDemandes, useCreateDemande } from "./hooks"
 import { DemandeFormData } from "./validation-schema"
 
 const getIconeStatut = (statut: PurchaseRequestStatus) => {
@@ -81,18 +80,18 @@ export default function DemandesPage() {
 
   const [formulaireOuvert, setFormulaireOuvert] = useState(false)
   const [nouvelleDemande, setNouvelleDemande] = useState({
-    name: "",
-    description: "",
-    total: 0,
-    service: "",
-    priority: "LOW" as const,
     from: "",
+    codeStation: "" as CodeStation,
+    description: "",
   })
 
   const router = useRouter()
 
   // Utiliser React Query pour récupérer les demandes
   const { data: demandes, isLoading, error } = useDemandes()
+
+  // Hook pour créer une nouvelle demande
+  const createDemandeMutation = useCreateDemande()
 
   const demandesFiltrees = (demandes || []).filter((dem: DemandeFormData) => {
     const correspondRecherche =
@@ -126,23 +125,66 @@ export default function DemandesPage() {
 
   const montantTotal = demandesFiltrees.reduce((somme: number, dem: DemandeFormData) => somme + (dem.total.total || 0), 0)
 
-  const gererSoumissionFormulaire = (e: React.FormEvent) => {
+  const gererSoumissionFormulaire = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    // TODO: Implémenter la création de demande avec le bon format
-    console.log("Création de demande:", nouvelleDemande)
+    try {
+      // Créer une demande minimale avec le statut BROUILLON
+      const demandeData: Partial<DemandeFormData> = {
+        from: nouvelleDemande.from,
+        codeStation: nouvelleDemande.codeStation,
+        description: nouvelleDemande.description || "",
+        date: new Date().toISOString(),
+        priority: "LOW",
+        status: PurchaseRequestStatus.BROUILLON,
+        items: [], // Sera rempli plus tard
+        billing: {
+          name: null,
+          siret: "00000000000000", // Valeur par défaut
+          address: "",
+          emails: [],
+        },
+        provider: {
+          name: "",
+          address: "",
+          email: null,
+          tel: null,
+        },
+        delivery: {
+          address: "",
+          tel: "",
+        },
+        total: {
+          orderTotal: 0,
+          total: 0,
+        },
+        files: [],
+      }
 
-    // Réinitialiser le formulaire
-    setNouvelleDemande({
-      name: "",
-      description: "",
-      total: 0,
-      service: "",
-      priority: "LOW",
-      from: "",
-    })
-    // Fermer le modal
-    setFormulaireOuvert(false)
+      // Utiliser la mutation pour créer la demande avec le format multipart
+      const createdDemande = await createDemandeMutation.mutateAsync({
+        requests: demandeData,
+        files: []
+      })
+
+      // Réinitialiser le formulaire
+      setNouvelleDemande({
+        from: "",
+        codeStation: "" as CodeStation,
+        description: "",
+      })
+
+      // Fermer le modal
+      setFormulaireOuvert(false)
+
+      // Rediriger vers la page de détail de la nouvelle demande
+      if (createdDemande.id) {
+        router.push(`/demandes/${createdDemande.id}`)
+      }
+    } catch (error) {
+      console.error('Erreur lors de la création de la demande:', error)
+      alert(`Erreur lors de la création: ${error instanceof Error ? error.message : 'Erreur inconnue'}`)
+    }
   }
 
   const gererChangementChamp = (champ: string, valeur: string) => {
@@ -207,140 +249,90 @@ export default function DemandesPage() {
                   Nouvelle Demande
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+              <DialogContent className="max-w-md">
                 <DialogHeader>
                   <DialogTitle>Créer une nouvelle demande d&apos;achat</DialogTitle>
                   <DialogDescription>
-                    Remplissez les informations ci-dessous pour soumettre votre demande d&apos;achat
+                    Remplissez les informations de base pour créer un brouillon de demande
                   </DialogDescription>
                 </DialogHeader>
                 <form onSubmit={gererSoumissionFormulaire} className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="md:col-span-2">
-                      <Label htmlFor="name" className="text-sm font-medium">
-                        Nom de la demande *
-                      </Label>
-                      <Input
-                        id="name"
-                        value={nouvelleDemande.name}
-                        onChange={(e) => gererChangementChamp("name", e.target.value)}
-                        placeholder="Ex: Fournitures de bureau - T1"
-                        required
-                        className="mt-1"
-                      />
-                    </div>
+                  <div>
+                    <Label htmlFor="from" className="text-sm font-medium">
+                      Demandeur *
+                    </Label>
+                    <Input
+                      id="from"
+                      value={nouvelleDemande.from}
+                      onChange={(e) => gererChangementChamp("from", e.target.value)}
+                      placeholder="Nom du demandeur"
+                      required
+                      className="mt-1"
+                    />
+                  </div>
 
-                    <div>
-                      <Label htmlFor="from" className="text-sm font-medium">
-                        Demandeur *
-                      </Label>
-                      <Input
-                        id="from"
-                        value={nouvelleDemande.from}
-                        onChange={(e) => gererChangementChamp("from", e.target.value)}
-                        placeholder="Nom du demandeur"
-                        required
-                        className="mt-1"
-                      />
-                    </div>
+                  <div>
+                    <Label htmlFor="codeStation" className="text-sm font-medium">
+                      Station *
+                    </Label>
+                    <Select
+                      value={nouvelleDemande.codeStation}
+                      onValueChange={(value: CodeStation) => gererChangementChamp("codeStation", value)}
+                      required
+                    >
+                      <SelectTrigger className="mt-1">
+                        <SelectValue placeholder="Sélectionner une station" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value={CodeStation.CODE_00}>Siège</SelectItem>
+                        <SelectItem value={CodeStation.CODE_06}>Cambre d&apos;Az</SelectItem>
+                        <SelectItem value={CodeStation.CODE_07}>Porté-Puymorens</SelectItem>
+                        <SelectItem value={CodeStation.CODE_08}>Formiguères</SelectItem>
+                        <SelectItem value={CodeStation.CODE_999}>Restauration</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-                    <div>
-                      <Label htmlFor="service" className="text-sm font-medium">
-                        Service *
-                      </Label>
-                      <Select
-                        value={nouvelleDemande.service}
-                        onValueChange={(value) => gererChangementChamp("service", value)}
-                        required
-                      >
-                        <SelectTrigger className="mt-1">
-                          <SelectValue placeholder="Sélectionner un service" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="ACC">Accueil</SelectItem>
-                          <SelectItem value="ADM">Admin</SelectItem>
-                          <SelectItem value="BAT">Bâtiment</SelectItem>
-                          <SelectItem value="BIL">Billetterie</SelectItem>
-                          <SelectItem value="COM">Communication</SelectItem>
-                          <SelectItem value="DAM">Dammage</SelectItem>
-                          <SelectItem value="PAR">Parc de roulage</SelectItem>
-                          <SelectItem value="PIS">Pistes</SelectItem>
-                          <SelectItem value="REST">Restaurant</SelectItem>
-                          <SelectItem value="RM">Remontée mécanique</SelectItem>
-                          <SelectItem value="USI">Snowmaker</SelectItem>
-                          <SelectItem value="AUT">Autre</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div>
-                      <Label htmlFor="total" className="text-sm font-medium">
-                        Montant total (€) *
-                      </Label>
-                      <Input
-                        id="total"
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        value={nouvelleDemande.total}
-                        onChange={(e) => gererChangementChamp("total", e.target.value)}
-                        placeholder="0.00"
-                        required
-                        className="mt-1"
-                      />
-                    </div>
-
-                    <div>
-                      <Label htmlFor="priority" className="text-sm font-medium">
-                        Priorité
-                      </Label>
-                      <Select
-                        value={nouvelleDemande.priority}
-                        onValueChange={(value: "HIGH" | "LOW") =>
-                          gererChangementChamp("priority", value)
-                        }
-                      >
-                        <SelectTrigger className="mt-1">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="LOW">Faible</SelectItem>
-                          <SelectItem value="HIGH">Élevée</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div className="md:col-span-2">
-                      <Label htmlFor="description" className="text-sm font-medium">
-                        Description
-                      </Label>
-                      <Textarea
-                        id="description"
-                        value={nouvelleDemande.description}
-                        onChange={(e) => gererChangementChamp("description", e.target.value)}
-                        placeholder="Description de la demande..."
-                        rows={4}
-                        className="mt-1"
-                      />
-                    </div>
+                  <div>
+                    <Label htmlFor="description" className="text-sm font-medium">
+                      Description
+                    </Label>
+                    <Input
+                      id="description"
+                      value={nouvelleDemande.description}
+                      onChange={(e) => gererChangementChamp("description", e.target.value)}
+                      placeholder="Description de la demande..."
+                      className="mt-1"
+                    />
                   </div>
 
                   <div className="flex items-center justify-between pt-4 border-t">
                     <p className="text-sm text-gray-500">* Champs obligatoires</p>
                     <div className="flex gap-2">
-                      <Button type="button" variant="outline" onClick={() => setFormulaireOuvert(false)}>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => setFormulaireOuvert(false)}
+                        disabled={createDemandeMutation.isPending}
+                      >
                         Annuler
                       </Button>
                       <Button
                         type="submit"
                         disabled={
-                          !nouvelleDemande.name ||
+                          createDemandeMutation.isPending ||
                           !nouvelleDemande.from ||
-                          !nouvelleDemande.service ||
-                          !nouvelleDemande.total
+                          !nouvelleDemande.codeStation
                         }
                       >
-                        Soumettre la demande
+                        {createDemandeMutation.isPending ? (
+                          <>
+                            <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                            Création...
+                          </>
+                        ) : (
+                          "Créer le brouillon"
+                        )}
                       </Button>
                     </div>
                   </div>

@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 export function middleware(req: NextRequest) {
-  const token = req.headers.get('trio_auth');
+  const cookie = req.cookies.get('trio_auth');
+  const token = cookie?.value ?? null;
 
   if (!token || token !== "UURNUzYkeVJuSlR5P0BwYWFwZ2ZxU3BwQWhoUiZiQkJTcmFoWEpFVA==") {
     return new NextResponse('⛔ Authorization Required ', { status: 401 });

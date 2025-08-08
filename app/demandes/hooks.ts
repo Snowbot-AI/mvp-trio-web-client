@@ -2,14 +2,9 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { DemandeFormData } from './validation-schema';
 import { buildApiUrl, API_CONFIG } from '../../lib/api-config';
 
-// Constante pour le token d'authentification
-const AUTH_TOKEN = 'UURNUzYkeVJuSlR5P0BwYWFwZ2ZxU3BwQWhoUiZiQkJTcmFoWEpFVA==';
-
-// Fonction utilitaire pour créer les headers de base
+// Fonction utilitaire pour créer les headers de base (sans auth, on passe par cookie)
 const createHeaders = (contentType?: string) => {
-  const headers: Record<string, string> = {
-    'trio_auth': AUTH_TOKEN,
-  };
+  const headers: Record<string, string> = {};
 
   if (contentType) {
     headers['Content-Type'] = contentType;
@@ -125,6 +120,39 @@ const updateDemandeWithJsonFile = async (input: { requests: DemandeFormData, fil
   return response.json();
 };
 
+// Fonction pour créer une nouvelle demande avec le format multipart
+const createDemande = async (input: { requests: Partial<DemandeFormData>, files?: (File | undefined)[] }): Promise<DemandeFormData> => {
+  let jsonData: Partial<DemandeFormData>;
+  let files: File[] | undefined
+
+  // Vérifier si l'input contient data et files ou si c'est directement les données
+  if (input.requests && input.files) {
+    jsonData = input.requests
+    files = input.files.filter((file): file is File => file !== undefined)
+  } else {
+    jsonData = input.requests
+    files = undefined
+  }
+
+  const formData = createFormDataFromJson(jsonData as DemandeFormData, files)
+
+  const url = buildApiUrl(API_CONFIG.endpoints.demandes)
+  console.log("Create API URL:", url)
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: createHeaders(), // Pas de Content-Type pour FormData, le navigateur le fait automatiquement
+    body: formData,
+  });
+
+  if (!response.ok) {
+    // Récupérer le message d'erreur de la réponse JSON
+    const errorData = await response.json()
+    throw new Error(errorData.error || `${response.status} ${response.statusText}`)
+  }
+
+  return response.json();
+};
+
 // Query hooks
 export const useDemandes = () => {
   return useQuery({
@@ -163,6 +191,20 @@ export const useUpdateDemandeWithJsonFile = () => {
     onSuccess: (updatedDemande) => {
       // Update the specific demande in cache
       queryClient.setQueryData(['demande', updatedDemande.id], updatedDemande);
+      // Invalidate the demandes list
+      queryClient.invalidateQueries({ queryKey: ['demandes'] });
+    },
+  });
+};
+
+export const useCreateDemande = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: createDemande,
+    onSuccess: (createdDemande) => {
+      // Add the new demande to cache
+      queryClient.setQueryData(['demande', createdDemande.id], createdDemande);
       // Invalidate the demandes list
       queryClient.invalidateQueries({ queryKey: ['demandes'] });
     },
