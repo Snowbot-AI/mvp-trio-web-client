@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import {
@@ -80,10 +81,20 @@ export default function DemandesPage() {
 
   const [formulaireOuvert, setFormulaireOuvert] = useState(false)
   const [nouvelleDemande, setNouvelleDemande] = useState({
-    from: "",
-    codeStation: "" as CodeStation,
+    from: "LAUBRAY",
+    codeStation: CodeStation.CODE_06 as CodeStation,
     description: "",
+    deliveryDate: "",
+    deliveryAddress: getStationName(CodeStation.CODE_06),
+    providerName: "",
+    providerAddress: "",
   })
+  const [fichiersDevis, setFichiersDevis] = useState<File[]>([])
+
+  const getDefaultDeliveryAddressForStation = (codeStation: CodeStation): string => {
+    // Par défaut, on préremplit avec le nom de la station sélectionnée
+    return getStationName(codeStation)
+  }
 
   const router = useRouter()
 
@@ -135,6 +146,7 @@ export default function DemandesPage() {
         codeStation: nouvelleDemande.codeStation,
         description: nouvelleDemande.description || "",
         date: new Date().toISOString(),
+        deliveryDate: nouvelleDemande.deliveryDate || undefined,
         priority: "LOW",
         status: PurchaseRequestStatus.BROUILLON,
         items: [], // Sera rempli plus tard
@@ -145,34 +157,43 @@ export default function DemandesPage() {
           emails: [],
         },
         provider: {
-          name: "",
-          address: "",
+          name: nouvelleDemande.providerName || "",
+          address: nouvelleDemande.providerAddress || "",
           email: null,
           tel: null,
         },
         delivery: {
-          address: "",
+          address: nouvelleDemande.deliveryAddress || "",
           tel: "",
         },
         total: {
           orderTotal: 0,
           total: 0,
         },
-        files: [],
+        files: fichiersDevis.length > 0 ? fichiersDevis.map((fichier) => ({
+          name: fichier.name,
+          category: 'quotations',
+          uploadInstant: new Date().toISOString(),
+        })) : [],
       }
 
       // Utiliser la mutation pour créer la demande avec le format multipart
       const createdDemande = await createDemandeMutation.mutateAsync({
         requests: demandeData,
-        files: []
+        files: fichiersDevis
       })
 
       // Réinitialiser le formulaire
       setNouvelleDemande({
-        from: "",
-        codeStation: "" as CodeStation,
+        from: "LAUBRAY",
+        codeStation: CodeStation.CODE_06 as CodeStation,
         description: "",
+        deliveryDate: "",
+        deliveryAddress: getStationName(CodeStation.CODE_06),
+        providerName: "",
+        providerAddress: "",
       })
+      setFichiersDevis([])
 
       // Fermer le modal
       setFormulaireOuvert(false)
@@ -192,6 +213,10 @@ export default function DemandesPage() {
       ...prev,
       [champ]: valeur,
     }))
+  }
+
+  const gererChangementFichiers = (files: File[]) => {
+    setFichiersDevis(files)
   }
 
   // Affichage du loading
@@ -277,7 +302,14 @@ export default function DemandesPage() {
                     </Label>
                     <Select
                       value={nouvelleDemande.codeStation}
-                      onValueChange={(value: CodeStation) => gererChangementChamp("codeStation", value)}
+                      onValueChange={(value: CodeStation) => {
+                        gererChangementChamp("codeStation", value)
+                        // Préremplir l'adresse de livraison lors du choix de la station si vide
+                        setNouvelleDemande(prev => ({
+                          ...prev,
+                          deliveryAddress: prev.deliveryAddress || getDefaultDeliveryAddressForStation(value)
+                        }))
+                      }}
                       required
                     >
                       <SelectTrigger className="mt-1">
@@ -302,6 +334,74 @@ export default function DemandesPage() {
                       value={nouvelleDemande.description}
                       onChange={(e) => gererChangementChamp("description", e.target.value)}
                       placeholder="Description de la demande..."
+                      className="mt-1"
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="deliveryDate" className="text-sm font-medium">
+                      Date de livraison souhaitée
+                    </Label>
+                    <Input
+                      id="deliveryDate"
+                      type="date"
+                      value={nouvelleDemande.deliveryDate}
+                      onChange={(e) => gererChangementChamp("deliveryDate", e.target.value)}
+                      className="mt-1"
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="deliveryAddress" className="text-sm font-medium">
+                      Adresse de livraison
+                    </Label>
+                    <Textarea
+                      id="deliveryAddress"
+                      value={nouvelleDemande.deliveryAddress}
+                      onChange={(e) => gererChangementChamp("deliveryAddress", e.target.value)}
+                      placeholder="Adresse de livraison"
+                      className="mt-1"
+                      rows={2}
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="providerName" className="text-sm font-medium">
+                      Fournisseur - Nom
+                    </Label>
+                    <Input
+                      id="providerName"
+                      value={nouvelleDemande.providerName}
+                      onChange={(e) => gererChangementChamp("providerName", e.target.value)}
+                      placeholder="Nom du fournisseur"
+                      className="mt-1"
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="providerAddress" className="text-sm font-medium">
+                      Fournisseur - Adresse
+                    </Label>
+                    <Textarea
+                      id="providerAddress"
+                      value={nouvelleDemande.providerAddress}
+                      onChange={(e) => gererChangementChamp("providerAddress", e.target.value)}
+                      placeholder="Adresse du fournisseur"
+                      className="mt-1"
+                      rows={2}
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="devis" className="text-sm font-medium">
+                      Devis (optionnel)
+                    </Label>
+                    <Input
+                      id="devis"
+                      type="file"
+                      accept=".pdf"
+                      multiple
+                      onChange={(e) => gererChangementFichiers(e.target.files ? Array.from(e.target.files) : [])}
                       className="mt-1"
                     />
                   </div>
