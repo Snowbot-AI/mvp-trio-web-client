@@ -39,7 +39,6 @@ const createFormDataFromJson = (jsonData: DemandeFormData, files?: File[]): Form
 // Fonctions API utilisant la configuration
 const fetchDemandes = async (): Promise<DemandeFormData[]> => {
   const url = buildApiUrl(API_CONFIG.endpoints.demandes)
-  console.log("API URL:", url)
   const response = await fetch(url, {
     headers: createHeaders(),
   });
@@ -104,7 +103,6 @@ const updateDemandeWithJsonFile = async (input: { requests: DemandeFormData, fil
   const id = jsonData.id
 
   const url = buildApiUrl(API_CONFIG.endpoints.demande(id as string))
-  console.log("Update API URL:", url)
   const response = await fetch(url, {
     method: 'PUT',
     headers: createHeaders(), // Pas de Content-Type pour FormData, le navigateur le fait automatiquement
@@ -137,7 +135,6 @@ const createDemande = async (input: { requests: Partial<DemandeFormData>, files?
   const formData = createFormDataFromJson(jsonData as DemandeFormData, files)
 
   const url = buildApiUrl(API_CONFIG.endpoints.demandes)
-  console.log("Create API URL:", url)
   const response = await fetch(url, {
     method: 'POST',
     headers: createHeaders(), // Pas de Content-Type pour FormData, le navigateur le fait automatiquement

@@ -232,7 +232,6 @@ export default function DetailDemande() {
 
     updateDemandeWithJsonFileMutation.mutate({ requests: demandeUpdated, files: [] }, {
       onSuccess: () => {
-        console.log("Statut changé:", nouveauStatut)
         if (nouveauStatut === PurchaseRequestStatus.A_VERIFIER) {
           toast.success("Demande soumise avec succès !")
         } else {

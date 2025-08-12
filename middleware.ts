@@ -6,13 +6,12 @@ export function middleware(req: NextRequest) {
 
   const expected = process.env.AUTH_TOKEN;
   if (!expected || expected.length < 16) {
-    if (process.env.NODE_ENV === 'production') {
-      return new NextResponse('⛔ Misconfiguration: AUTH_TOKEN is required', { status: 500 });
-    }
+    // Do not leak configuration details
+    return new NextResponse('Unauthorized', { status: 401 });
   }
 
-  if (!token || (expected && token !== expected)) {
-    return new NextResponse('⛔ Authorization Required ', { status: 401 });
+  if (!token || token !== expected) {
+    return new NextResponse('Unauthorized', { status: 401 });
   }
 
   return NextResponse.next();
