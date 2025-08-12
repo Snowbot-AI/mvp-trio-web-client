@@ -1,8 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 
-const AUTH_TOKEN = 'UURNUzYkeVJuSlR5P0BwYWFwZ2ZxU3BwQWhoUiZiQkJTcmFoWEpFVA=='
 const COOKIE_NAME = 'trio_auth'
+
+const AuthTokenSchema = z.string().min(16)
+
+function resolveAuthToken(): string {
+    const fromEnv = process.env.AUTH_TOKEN
+    const parsed = AuthTokenSchema.safeParse(fromEnv)
+    if (parsed.success) {
+        return parsed.data
+    }
+    // Fallback only for non-production to ease local dev
+    const fallback = 'UURNUzYkeVJuSlR5P0BwYWFwZ2ZxU3BwQWhoUiZiQkJTcmFoWEpFVA=='
+    if (process.env.NODE_ENV === 'production') {
+        throw new Error('AUTH_TOKEN env var is required in production')
+    }
+    return fallback
+}
 
 const PostBodySchema = z.object({
     remember: z.boolean().optional().default(false),
@@ -21,8 +36,9 @@ export async function POST(req: NextRequest) {
 
     const { remember } = result.data
 
+    const token = resolveAuthToken()
     const res = NextResponse.json({ authenticated: true })
-    res.cookies.set(COOKIE_NAME, AUTH_TOKEN, {
+    res.cookies.set(COOKIE_NAME, token, {
         httpOnly: true,
         sameSite: 'lax',
         secure: process.env.NODE_ENV === 'production',
@@ -46,7 +62,13 @@ export async function DELETE() {
 
 export async function GET(req: NextRequest) {
     const token = req.cookies.get(COOKIE_NAME)?.value ?? null
-    const authenticated = token === AUTH_TOKEN
+    let expected: string
+    try {
+        expected = resolveAuthToken()
+    } catch {
+        return NextResponse.json({ authenticated: false }, { status: 401 })
+    }
+    const authenticated = token === expected
     return NextResponse.json({ authenticated })
 }
 

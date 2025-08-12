@@ -298,6 +298,7 @@ export const DemandePDF = ({ demande }: { demande: DemandeFormData }) => (
             <View style={styles.header}>
                 {/* Logo Trio */}
                 <View style={styles.logoContainer}>
+                    {/* eslint-disable-next-line jsx-a11y/alt-text */}
                     <Image
                         style={styles.logoImage}
                         src="/logoTrio.png"

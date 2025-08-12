@@ -304,13 +304,13 @@ export function ActionButtons({
                             </AlertDialogHeader>
                             <div className="py-4">
                                 <Label htmlFor="more-info-comment" className="text-sm font-medium">
-                                    Commentaire obligatoire *
+                                    Commentaire (optionnel)
                                 </Label>
                                 <Textarea
                                     id="more-info-comment"
                                     value={moreInfoComment}
                                     onChange={(e) => onMoreInfoCommentChange(e.target.value)}
-                                    placeholder="Veuillez préciser quelles informations supplémentaires sont nécessaires..."
+                                    placeholder="Vous pouvez préciser quelles informations supplémentaires sont nécessaires..."
                                     rows={3}
                                     className="mt-1"
                                 />
@@ -324,13 +324,10 @@ export function ActionButtons({
                                 </AlertDialogCancel>
                                 <AlertDialogAction
                                     onClick={() => {
-                                        if (moreInfoComment.trim()) {
-                                            onStatusChange(PurchaseRequestStatus.A_MODIFIER)
-                                            onShowMoreInfoDialogChange(false)
-                                            onMoreInfoCommentChange("")
-                                        }
+                                        onStatusChange(PurchaseRequestStatus.A_MODIFIER)
+                                        onShowMoreInfoDialogChange(false)
+                                        onMoreInfoCommentChange("")
                                     }}
-                                    disabled={!moreInfoComment.trim()}
                                 >
                                     Confirmer la demande
                                 </AlertDialogAction>

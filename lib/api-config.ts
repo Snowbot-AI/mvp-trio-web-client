@@ -1,6 +1,6 @@
 // Configuration de l'API backend
 export const API_CONFIG = {
-  baseUrl: process.env.NEXT_PUBLIC_API_BASE_URL,
+  baseUrl: process.env.NEXT_PUBLIC_API_BASE_URL ?? '',
   endpoints: {
     demandes: '/api/demandes',
     demande: (id: string) => `/api/demandes/${id}`,
