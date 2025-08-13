@@ -360,7 +360,6 @@ export function ActionButtons({
                     <AlertDialogTrigger asChild>
                         <Button
                             variant="outline"
-                            disabled={!demande.items || demande.items.length === 0}
                         >
                             <CheckCircle className="h-4 w-4 mr-2" />
                             Soumettre
