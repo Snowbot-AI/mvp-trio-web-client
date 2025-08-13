@@ -309,6 +309,7 @@ export default function DetailDemande() {
     const description = (watch(`items.${newItemIndex}.description`) || "").trim()
     const service = (watch(`items.${newItemIndex}.service`) || "").trim()
     if (!description || !service) {
+      isAppendingRef.current = false
       return
     }
 
@@ -331,9 +332,9 @@ export default function DetailDemande() {
       price,
     }
 
-    // Utiliser append pour maintenir la cohérence avec useFieldArray
-    append(nouvelArticle)
+    // Nettoyer d'abord les valeurs "brouillon" à l'index virtuel avant d'ajouter
     unregister(`items.${newItemIndex}`)
+    append(nouvelArticle)
     setAjoutArticle(false)
     isAppendingRef.current = false
   }
@@ -438,7 +439,10 @@ export default function DetailDemande() {
 
   // Fonction wrapper pour la sauvegarde avec extraction des fichiers
   const handleSave = handleSubmit((data: DemandeFormData) => {
-    gererSauvegarde(data, filesToUpload)
+    // Sanitize: retirer les entrées falsy (ex: null) éventuellement présentes dans items
+    const sanitizedItems = Array.isArray(data.items) ? data.items.filter(Boolean) : []
+    const dataSanitized: DemandeFormData = { ...data, items: sanitizedItems as DemandeFormData['items'] }
+    gererSauvegarde(dataSanitized, filesToUpload)
   }, (errors) => {
     // Extraire récursivement des messages détaillés (items[index].champ)
     const flattenErrors = (err: unknown, path: string[] = []): string[] => {

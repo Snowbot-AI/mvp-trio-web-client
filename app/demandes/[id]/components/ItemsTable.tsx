@@ -53,6 +53,8 @@ export function ItemsTable({
             }
         }
     }, [ajoutArticle, items.length, setValue, watch])
+
+
     const serviceLabels: Record<string, string> = {
         ACC: 'Accueil',
         ADM: 'Admin',
@@ -69,8 +71,7 @@ export function ItemsTable({
     }
 
     const newIndex = items.length
-    const watchedQuantity = useWatch({ control, name: `items.${newIndex}.quantity` }) || 0
-    const watchedUnitPrice = useWatch({ control, name: `items.${newIndex}.unitPrice` }) || 0
+    const watchedPrice = useWatch({ control, name: `items.${newIndex}.price` }) || 0
 
     return (
         <Card>
@@ -114,7 +115,7 @@ export function ItemsTable({
                                     <TableCell>{article.description}</TableCell>
                                     <TableCell>{article.quantity}</TableCell>
                                     <TableCell>{article.unitPrice ? article.unitPrice.toFixed(2) : '0.00'} €</TableCell>
-                                    <TableCell className="font-medium">{article.price ? article.price.toFixed(2) : '0.00'} €</TableCell>
+                                    <TableCell className="font-medium">{(article.quantity * article.unitPrice).toFixed(2)} €</TableCell>
                                     {modeEdition && (
                                         <TableCell>
                                             <Button size="sm" variant="destructive" onClick={() => onDeleteItem(index)}>
@@ -244,7 +245,7 @@ export function ItemsTable({
                                     </TableCell>
                                     <TableCell>
                                         <div className="px-3 py-2 bg-gray-50 rounded-md border border-input text-sm">
-                                            {(Number(watchedQuantity || 0) * Number(watchedUnitPrice || 0)).toFixed(2)}
+                                            {watchedPrice.toFixed(2)} €
                                         </div>
                                     </TableCell>
                                     <TableCell className="flex gap-2">
