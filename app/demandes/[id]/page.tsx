@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { useForm, useFieldArray } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -52,6 +52,7 @@ export default function DetailDemande() {
   const [filesToUpload, setFilesToUpload] = useState<File[]>([])
   const [fichierASupprimer, setFichierASupprimer] = useState<{ id: string; name: string } | null>(null)
   const [isScrolled, setIsScrolled] = useState(false)
+  const isAppendingRef = useRef(false)
 
   // React Hook Form avec validation Zod
   const {
@@ -73,7 +74,7 @@ export default function DetailDemande() {
     } : undefined
   })
 
-  const { fields: items, remove } = useFieldArray({
+  const { fields: items, append, remove } = useFieldArray({
     control,
     name: "items"
   })
@@ -118,33 +119,7 @@ export default function DetailDemande() {
 
   // Handlers
   const gererSauvegarde = (data: DemandeFormData, files?: File[]) => {
-    const dataToSave = data
-    if (ajoutArticle) {
-      const currentItems = data.items || []
-      const newItemIndex = currentItems.length
-
-      const description = watch(`items.${newItemIndex}.description`) || ""
-      const service = watch(`items.${newItemIndex}.service`) || ""
-
-      if (description.trim() && service.trim()) {
-        const nouvelArticle = {
-          description: description,
-          service: service,
-          budgetType: watch(`items.${newItemIndex}.budgetType`) || "B",
-          itemType: watch(`items.${newItemIndex}.itemType`) || null,
-          referenceDevis: watch(`items.${newItemIndex}.referenceDevis`) || undefined,
-          quantity: watch(`items.${newItemIndex}.quantity`) || 0,
-          unitPrice: watch(`items.${newItemIndex}.unitPrice`) || 0,
-          price: watch(`items.${newItemIndex}.price`) || 0,
-        }
-
-        dataToSave.items = [...currentItems, nouvelArticle]
-      } else {
-        dataToSave.items = currentItems
-      }
-    }
-
-    updateDemandeWithJsonFileMutation.mutate({ requests: dataToSave, files: files || [] }, {
+    updateDemandeWithJsonFileMutation.mutate({ requests: data, files: files || [] }, {
       onSuccess: () => {
         setModeEdition(false)
         setAjoutArticle(false)
@@ -324,13 +299,63 @@ export default function DetailDemande() {
     unregister(`items.${newIndex}`)
   }
 
+  const confirmerAjoutArticle = () => {
+    if (isAppendingRef.current) {
+      return
+    }
+    isAppendingRef.current = true
+    const newItemIndex = items.length
+
+    const description = (watch(`items.${newItemIndex}.description`) || "").trim()
+    const service = (watch(`items.${newItemIndex}.service`) || "").trim()
+    if (!description || !service) {
+      return
+    }
+
+    const budgetType = watch(`items.${newItemIndex}.budgetType`) || "B"
+    const itemType = watch(`items.${newItemIndex}.itemType`) || null
+    const referenceDevis = watch(`items.${newItemIndex}.referenceDevis`) || undefined
+    const rawQuantity = watch(`items.${newItemIndex}.quantity`)
+    const quantity = typeof rawQuantity === 'number' && rawQuantity > 0 ? rawQuantity : 1
+    const unitPrice = watch(`items.${newItemIndex}.unitPrice`) || 0
+    const price = quantity * unitPrice
+
+    const nouvelArticle: DemandeFormData['items'][number] = {
+      description,
+      service,
+      budgetType,
+      itemType,
+      referenceDevis,
+      quantity,
+      unitPrice,
+      price,
+    }
+
+    // Utiliser append pour maintenir la cohérence avec useFieldArray
+    append(nouvelArticle)
+    unregister(`items.${newItemIndex}`)
+    setAjoutArticle(false)
+    isAppendingRef.current = false
+  }
+
   const handleSaveClick = () => {
     if (ajoutArticle) {
-      const desc = watch(`items.${items.length}.description`) || ""
-      const svc = watch(`items.${items.length}.service`) || ""
-      const hasAnyValue = `${desc}${svc}`.trim().length > 0
+      const desc = (watch(`items.${items.length}.description`) || "").trim()
+      const svc = (watch(`items.${items.length}.service`) || "").trim()
+      const hasAnyValue = `${desc}${svc}`.length > 0
+
       if (!hasAnyValue) {
         annulerAjoutArticle()
+      } else {
+        // Exiger au minimum désignation et service pour confirmer l'ajout
+        if (!desc || !svc) {
+          toast.error("Complétez l'article en cours (désignation et service) avant de sauvegarder.", {
+            duration: 5000,
+            style: { background: 'white', color: '#ef4444', border: '1px solid #ef4444' }
+          })
+          return
+        }
+        confirmerAjoutArticle()
       }
     }
     handleSave()
@@ -415,20 +440,42 @@ export default function DetailDemande() {
   const handleSave = handleSubmit((data: DemandeFormData) => {
     gererSauvegarde(data, filesToUpload)
   }, (errors) => {
-    // Toujours afficher les erreurs de validation
-    const errorMessages = Object.keys(errors).map(key => {
-      const error = errors[key as keyof typeof errors]
-      if (error && typeof error === 'object' && 'message' in error) {
-        return `${key}: ${error.message}`
+    // Extraire récursivement des messages détaillés (items[index].champ)
+    const flattenErrors = (err: unknown, path: string[] = []): string[] => {
+      const messages: string[] = []
+      if (!err) {
+        return messages
       }
-      return `${key}: Erreur de validation`
-    })
+
+      if (Array.isArray(err)) {
+        err.forEach((item, idx) => {
+          messages.push(...flattenErrors(item as unknown, [...path, String(idx)]))
+        })
+        return messages
+      }
+
+      if (typeof err === 'object') {
+        const obj = err as Record<string, unknown>
+        if ('message' in obj && typeof (obj as { message?: unknown }).message === 'string') {
+          messages.push(`${path.join('.')} : ${(obj as { message: string }).message}`)
+          return messages
+        }
+        Object.keys(obj).forEach((key) => {
+          messages.push(...flattenErrors(obj[key], [...path, key]))
+        })
+        return messages
+      }
+
+      return messages
+    }
+
+    const errorMessages = flattenErrors(errors)
 
     toast.error(
       <div>
         <div className="font-bold mb-2">Erreurs de validation ({errorMessages.length}) :</div>
         <ul className="text-sm space-y-1">
-          {errorMessages.map((error: string, index: number) => (
+          {(errorMessages.length > 0 ? errorMessages : ['Validation: Erreur de validation']).map((error: string, index: number) => (
             <li key={index} className="flex items-start">
               <span className="text-red-500 mr-1">•</span>
               <span>{error}</span>
@@ -587,9 +634,11 @@ export default function DetailDemande() {
             register={register}
             watch={watch}
             setValue={setValue}
+            control={control}
             onAddItem={() => setAjoutArticle(true)}
             onCancelAddItem={annulerAjoutArticle}
             onDeleteItem={supprimerArticle}
+            onConfirmAddItem={confirmerAjoutArticle}
           />
 
           {/* 3ème partie : Informations de facturation, fournisseur et livraison */}

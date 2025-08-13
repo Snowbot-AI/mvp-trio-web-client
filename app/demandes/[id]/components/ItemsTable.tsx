@@ -1,11 +1,14 @@
+"use client"
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Tag, Plus, Trash2, X } from "lucide-react"
+import { Tag, Plus, Trash2, X, Check } from "lucide-react"
+import { useEffect } from "react"
 import { TrioService, ItemType } from "../../types"
-import { UseFormRegister, UseFormSetValue, UseFormWatch, FieldErrors, FieldArrayWithId } from "react-hook-form"
+import { UseFormRegister, UseFormSetValue, UseFormWatch, FieldErrors, FieldArrayWithId, Control, useWatch } from "react-hook-form"
 import { DemandeFormData } from "../../validation-schema"
 
 interface ItemsTableProps {
@@ -17,9 +20,11 @@ interface ItemsTableProps {
     register: UseFormRegister<DemandeFormData>
     watch: UseFormWatch<DemandeFormData>
     setValue: UseFormSetValue<DemandeFormData>
+    control: Control<DemandeFormData>
     onAddItem: () => void
     onCancelAddItem: () => void
     onDeleteItem: (index: number) => void
+    onConfirmAddItem: () => void
 }
 
 export function ItemsTable({
@@ -30,10 +35,24 @@ export function ItemsTable({
     register,
     watch,
     setValue,
+    control,
     onAddItem,
     onCancelAddItem,
     onDeleteItem,
+    onConfirmAddItem,
 }: ItemsTableProps) {
+    // Définir la quantité par défaut à 1 dès qu'on commence l'ajout d'un article
+    useEffect(() => {
+        if (ajoutArticle) {
+            const index = items.length
+            const currentQuantity = watch(`items.${index}.quantity`) || 0
+            if (!currentQuantity) {
+                setValue(`items.${index}.quantity`, 1)
+                const unitPrice = watch(`items.${index}.unitPrice`) || 0
+                setValue(`items.${index}.price`, 1 * unitPrice)
+            }
+        }
+    }, [ajoutArticle, items.length, setValue, watch])
     const serviceLabels: Record<string, string> = {
         ACC: 'Accueil',
         ADM: 'Admin',
@@ -48,6 +67,10 @@ export function ItemsTable({
         USI: 'Snowmaker (Usine à neige)',
         AUT: 'Autre'
     }
+
+    const newIndex = items.length
+    const watchedQuantity = useWatch({ control, name: `items.${newIndex}.quantity` }) || 0
+    const watchedUnitPrice = useWatch({ control, name: `items.${newIndex}.unitPrice` }) || 0
 
     return (
         <Card>
@@ -220,17 +243,15 @@ export function ItemsTable({
                                         )}
                                     </TableCell>
                                     <TableCell>
-                                        <Input
-                                            type="number"
-                                            step="0.01"
-                                            readOnly
-                                            value={((watch(`items.${items.length}.quantity`) || 0) * (watch(`items.${items.length}.unitPrice`) || 0)).toFixed(2)}
-                                            {...register(`items.${items.length}.price`, { valueAsNumber: true })}
-                                            className="bg-gray-50"
-                                        />
+                                        <div className="px-3 py-2 bg-gray-50 rounded-md border border-input text-sm">
+                                            {(Number(watchedQuantity || 0) * Number(watchedUnitPrice || 0)).toFixed(2)}
+                                        </div>
                                     </TableCell>
-                                    <TableCell>
-                                        <Button size="sm" variant="outline" onClick={onCancelAddItem}>
+                                    <TableCell className="flex gap-2">
+                                        <Button type="button" size="icon" onClick={onConfirmAddItem} aria-label="Confirmer l'ajout">
+                                            <Check className="h-4 w-4" />
+                                        </Button>
+                                        <Button type="button" size="icon" variant="outline" onClick={onCancelAddItem} aria-label="Annuler">
                                             <X className="h-4 w-4" />
                                         </Button>
                                     </TableCell>

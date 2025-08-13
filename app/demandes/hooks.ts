@@ -48,6 +48,11 @@ const createFormDataFromJson = (jsonData: DemandeFormData, files?: File[]): Form
       formData.append('files', file)
     })
   }
+  // } else {
+  //   // Si aucun fichier, envoyer tout de même un champ 'files' vide (fichier 0 octet)
+  //   const emptyFile = new File([new Uint8Array()], 'empty', { type: 'application/octet-stream' })
+  //   formData.append('files', emptyFile)
+  // }
 
   return formData
 }

@@ -4,6 +4,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 
 export const runtime = 'nodejs'
+function isFileLike(value: unknown): value is Blob & { name?: string } {
+    return !!value && typeof value === 'object' && typeof (value as { arrayBuffer?: unknown }).arrayBuffer === 'function' && typeof (value as { type?: unknown }).type === 'string'
+}
+
 
 function normalizePem(value: string | undefined): string {
     return (value ?? '').replace(/\\n/g, '\n')
@@ -133,8 +137,8 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         let requestJson: unknown
         if (typeof requestPart === 'string') {
             requestJson = JSON.parse(requestPart)
-        } else if (requestPart instanceof File) {
-            const text = await requestPart.text()
+        } else if (isFileLike(requestPart)) {
+            const text = await (requestPart as Blob).text()
             requestJson = JSON.parse(text)
         } else {
             return NextResponse.json({ error: 'Unsupported request part type' }, { status: 400 })
@@ -157,8 +161,8 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         // Forward any files[] parts
         const files = form.getAll('files')
         for (const file of files) {
-            if (file instanceof File) {
-                const name = (file.name ?? 'file') as string
+            if (isFileLike(file)) {
+                const name = typeof (file as { name?: unknown }).name === 'string' ? ((file as { name?: string }).name as string) : 'file'
                 forwardForm.append('files', file as unknown as Blob, name)
             }
         }

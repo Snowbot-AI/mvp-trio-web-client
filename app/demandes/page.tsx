@@ -151,16 +151,14 @@ export default function DemandesPage() {
         status: PurchaseRequestStatus.BROUILLON,
         items: [], // Sera rempli plus tard
         billing: {
-          name: null,
-          siret: "00000000000000", // Valeur par défaut
+          name: "",
+          siret: "", // Valeur par défaut
           address: "",
           emails: [],
         },
         provider: {
           name: nouvelleDemande.providerName || "",
           address: nouvelleDemande.providerAddress || "",
-          email: null,
-          tel: null,
         },
         delivery: {
           address: nouvelleDemande.deliveryAddress || "",

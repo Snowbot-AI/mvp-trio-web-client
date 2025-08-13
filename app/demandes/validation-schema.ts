@@ -6,8 +6,11 @@ const ItemSchema = z.object({
   description: z.string().min(1, "La désignation est requise"),
   service: z.string().min(1, "Le service est requis"),
   budgetType: z.string().regex(/^(B\d{1,4}|H)$/, "Le type de budget doit être 'H' ou correspondre au format 'B29', 'B105', etc."),
-  itemType: z.nativeEnum(ItemType).optional().nullable(),
-  referenceDevis: z.string().optional(),
+  itemType: z.enum(ItemType).optional().nullable(),
+  // Autoriser chaîne vide -> undefined sans passer l'input en unknown
+  referenceDevis: z.union([z.string().trim(), z.undefined(), z.null()])
+    .transform((v) => (v === "" ? undefined : v))
+    .optional(),
   quantity: z.number().min(1, "La quantité doit être supérieure à 0"),
   unitPrice: z.number().min(0, "Le prix unitaire doit être positif"),
   price: z.number().min(0, "Le prix doit être positif"),
@@ -16,23 +19,39 @@ const ItemSchema = z.object({
 
 // Schéma pour les informations de facturation
 const BillingSchema = z.object({
-  name: z.string().min(1, "Le nom de facturation est requis").nullable(),
+  name: z.string().min(1, "Le nom de facturation est requis"),
   siret: z.string().regex(/^\d{14}$/, "Le SIRET doit contenir 14 chiffres"),
   address: z.string().min(1, "L'adresse de facturation est requise"),
-  emails: z.array(z.string().email("Format d'email invalide")).min(1, "Au moins un email est requis"),
+  // Autoriser chaînes vides dans les emails optionnels -> null sans unknown
+  emails: z.array(
+    z.string()
+      .trim()
+      .transform((s) => (s === "" ? null : s))
+      .pipe(z.string().email("Format d'email invalide"))
+  )
+    .refine((arr) => arr.some((v) => typeof v === 'string' && v.length > 0), {
+      message: "Au moins un email est requis",
+    }),
 })
 
 // Schéma pour les informations du fournisseur
 const ProviderSchema = z.object({
   name: z.string().min(1, "Le nom du fournisseur est requis"),
   address: z.string().min(1, "L'adresse du fournisseur est requise"),
-  email: z.string().email("Format d'email invalide").nullable(),
-  tel: z.string().regex(/^(?:(?:\+|00)33|0)\s*[1-9](?:[\s.-]*\d{2}){4}$/, "Format de téléphone invalide").nullable(),
+  // Autoriser chaîne vide -> undefined et valider sinon
+  email: z.union([z.string().trim().email("Format d'email invalide"), z.literal(""), z.null()])
+    .transform((v) => (v === "" ? undefined : v))
+    .optional(),
+  // Autoriser chaîne vide -> undefined et valider sinon
+  tel: z.union([z.string().trim().regex(/^(?:(?:\+|00)33|0)\s*[1-9](?:[\s.-]*\d{2}){4}$/, "Format de téléphone invalide"), z.literal(""), z.null()])
+    .transform((v) => (v === "" ? undefined : v))
+    .optional(),
 })
 
 // Schéma pour les informations de livraison
 const DeliverySchema = z.object({
   address: z.string().min(1, "L'adresse de livraison est requise"),
+  // Autoriser chaîne vide -> invalide? Ici tel est requis côté livraison, donc on garde requis
   tel: z.string().regex(/^(?:(?:\+|00)33|0)\s*[1-9](?:[\s.-]*\d{2}){4}$/, "Format de téléphone invalide"),
 })
 
@@ -62,10 +81,15 @@ export const DemandeSchema = z.object({
   from: z.string().min(1, "Le demandeur est requis"),
   description: z.string().optional().nullable(),
   date: z.string(),
-  deliveryDate: z.string().optional().nullable(),
+  // Accepter "", null, undefined → convertir "" en null pour rester optionnel/nullable
+  deliveryDate: z.union([z.string(), z.null(), z.undefined()])
+    .transform((v) => (v === "" ? null : v))
+    .optional()
+    .nullable(),
   priority: z.enum(["LOW", "HIGH"]),
   status: z.enum(PurchaseRequestStatus),
   codeStation: z.enum(CodeStation),
+  // Les articles doivent être valides; on évite preprocess pour conserver des types d'entrée précis
   items: z.array(ItemSchema).min(1, "Au moins un article est requis"),
   billing: BillingSchema,
   provider: ProviderSchema,

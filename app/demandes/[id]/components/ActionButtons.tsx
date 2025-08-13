@@ -16,7 +16,6 @@ import { CheckCircle, XCircle, Clock, Edit, Save, X, Download } from "lucide-rea
 import { PurchaseRequestStatus } from "../../types"
 import { DemandeFormData } from "../../validation-schema"
 import { FieldErrors } from "react-hook-form"
-import { toast } from "sonner"
 
 interface ActionButtonsProps {
     demande: DemandeFormData
@@ -60,101 +59,48 @@ export function ActionButtons({
     onValidateAndSubmit,
 }: ActionButtonsProps) {
     // Fonction pour vérifier s'il y a des erreurs de validation
-    const hasValidationErrors = () => {
-        // Vérifier s'il y a des erreurs dans les champs principaux
-        const hasMainErrors = Object.keys(validationErrors).some(key =>
-            key !== 'items' && validationErrors[key as keyof typeof validationErrors]
-        )
-
-        // Vérifier s'il y a des erreurs dans les articles
-        const hasItemErrors = validationErrors.items &&
-            Array.isArray(validationErrors.items) &&
-            validationErrors.items.some(item => item && Object.keys(item).length > 0)
-
-        return hasMainErrors || hasItemErrors
-    }
+    const hasValidationErrors = () => getValidationErrorCount() > 0
 
     // Fonction pour compter le nombre d'erreurs de validation
     const getValidationErrorCount = () => {
         let count = 0
 
-        // Compter les erreurs dans les champs principaux
         Object.keys(validationErrors).forEach(key => {
-            if (key !== 'items' && validationErrors[key as keyof typeof validationErrors]) {
+            const error = validationErrors[key as keyof typeof validationErrors]
+
+            if (key === 'items' && Array.isArray(error)) {
+                error.forEach((itemError) => {
+                    if (!itemError || typeof itemError !== 'object') {
+                        return
+                    }
+                    Object.keys(itemError).forEach((fieldKey) => {
+                        const fieldError = (itemError as Record<string, unknown>)[fieldKey]
+                        if (fieldError && typeof fieldError === 'object' && 'message' in fieldError) {
+                            count++
+                        }
+                    })
+                })
+                return
+            }
+
+            if (error && typeof error === 'object' && 'message' in error) {
                 count++
+                return
+            }
+
+            if (error && typeof error === 'object') {
+                Object.keys(error).forEach((subKey) => {
+                    const subError = (error as Record<string, unknown>)[subKey]
+                    if (subError && typeof subError === 'object' && 'message' in subError) {
+                        count++
+                    }
+                })
             }
         })
-
-        // Compter les erreurs dans les articles
-        if (validationErrors.items && Array.isArray(validationErrors.items)) {
-            validationErrors.items.forEach(item => {
-                if (item && Object.keys(item).length > 0) {
-                    count++
-                }
-            })
-        }
 
         return count
     }
 
-    // Fonction pour obtenir la liste des erreurs de validation
-    const getValidationErrorMessages = () => {
-        const errors: string[] = []
-
-        // Mapping des noms de champs pour plus de clarté
-        const fieldNames: Record<string, string> = {
-            from: 'Demandeur',
-            billing: 'Facturation',
-            provider: 'Fournisseur',
-            delivery: 'Livraison',
-            items: 'Articles',
-            name: 'Nom',
-            siret: 'SIRET',
-            address: 'Adresse',
-            emails: 'Emails',
-            email: 'Email',
-            tel: 'Téléphone',
-            description: 'Désignation',
-            service: 'Service',
-            budgetType: 'Type de budget',
-            quantity: 'Quantité',
-            unitPrice: 'Prix unitaire',
-            price: 'Prix'
-        }
-
-        // Récupérer les erreurs dans les champs principaux
-        Object.keys(validationErrors).forEach(key => {
-            const error = validationErrors[key as keyof typeof validationErrors]
-            if (key === 'items' && Array.isArray(error)) {
-                error.forEach((itemError, index) => {
-                    if (itemError && Object.keys(itemError).length > 0) {
-                        Object.keys(itemError).forEach(fieldKey => {
-                            const fieldError = (itemError as Record<string, unknown>)[fieldKey]
-                            if (fieldError && typeof fieldError === 'object' && fieldError !== null && 'message' in fieldError) {
-                                const fieldName = fieldNames[fieldKey] || fieldKey
-                                errors.push(`Article ${index + 1} - ${fieldName}: ${(fieldError as { message: string }).message}`)
-                            }
-                        })
-                    }
-                })
-            } else if (error && typeof error === 'object' && 'message' in error) {
-                const fieldName = fieldNames[key] || key
-                errors.push(`${fieldName}: ${error.message}`)
-            } else if (error && typeof error === 'object') {
-                // Pour les objets imbriqués comme billing, provider, delivery
-                Object.keys(error).forEach(subKey => {
-                    const subError = (error as Record<string, unknown>)[subKey]
-                    if (subError && typeof subError === 'object' && subError !== null && 'message' in subError) {
-                        const sectionName = fieldNames[key] || key
-                        const fieldName = fieldNames[subKey] || subKey
-                        errors.push(`${sectionName} - ${fieldName}: ${(subError as { message: string }).message}`)
-                    }
-                })
-            }
-        })
-
-        return errors
-    }
 
     if (modeEdition) {
         return (
@@ -165,37 +111,7 @@ export function ActionButtons({
                 </Button>
 
                 <Button
-                    onClick={() => {
-                        // En mode édition, on fait toujours la validation avant la sauvegarde
-                        if (hasValidationErrors()) {
-                            // Afficher les erreurs dans un toast détaillé
-                            const errorMessages = getValidationErrorMessages()
-                            toast.error(
-                                <div>
-                                    <div className="font-bold mb-2">Erreurs de validation ({errorMessages.length}) :</div>
-                                    <ul className="text-sm space-y-1">
-                                        {errorMessages.map((error, index) => (
-                                            <li key={index} className="flex items-start">
-                                                <span className="text-red-500 mr-1">•</span>
-                                                <span>{error}</span>
-                                            </li>
-                                        ))}
-                                    </ul>
-                                </div>,
-                                {
-                                    duration: 8000,
-                                    style: {
-                                        background: 'white',
-                                        color: '#ef4444',
-                                        border: '1px solid #ef4444',
-                                        maxWidth: '500px'
-                                    }
-                                }
-                            )
-                        } else {
-                            onSave()
-                        }
-                    }}
+                    onClick={onSave}
                     disabled={isPending}
                     className={hasValidationErrors() ? 'bg-red-500 hover:bg-red-600' : ''}
                 >
