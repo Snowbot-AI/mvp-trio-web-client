@@ -274,7 +274,7 @@ export default function DemandesPage() {
                   Nouvelle Demande
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-md">
+              <DialogContent className="w-full md:max-w-3xl">
                 <DialogHeader>
                   <DialogTitle>Créer une nouvelle demande d&apos;achat</DialogTitle>
                   <DialogDescription>
@@ -282,128 +282,130 @@ export default function DemandesPage() {
                   </DialogDescription>
                 </DialogHeader>
                 <form onSubmit={gererSoumissionFormulaire} className="space-y-4">
-                  <div>
-                    <Label htmlFor="from" className="text-sm font-medium">
-                      Demandeur *
-                    </Label>
-                    <Input
-                      id="from"
-                      value={nouvelleDemande.from}
-                      onChange={(e) => gererChangementChamp("from", e.target.value)}
-                      placeholder="Nom du demandeur"
-                      required
-                      className="mt-1"
-                    />
-                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="md:col-span-1">
+                      <Label htmlFor="from" className="text-sm font-medium">
+                        Demandeur *
+                      </Label>
+                      <Input
+                        id="from"
+                        value={nouvelleDemande.from}
+                        onChange={(e) => gererChangementChamp("from", e.target.value)}
+                        placeholder="Nom du demandeur"
+                        required
+                        className="mt-1"
+                      />
+                    </div>
 
-                  <div>
-                    <Label htmlFor="codeStation" className="text-sm font-medium">
-                      Station *
-                    </Label>
-                    <Select
-                      value={nouvelleDemande.codeStation}
-                      onValueChange={(value: CodeStation) => {
-                        gererChangementChamp("codeStation", value)
-                        // Préremplir l'adresse de livraison lors du choix de la station si vide
-                        setNouvelleDemande(prev => ({
-                          ...prev,
-                          deliveryAddress: prev.deliveryAddress || getDefaultDeliveryAddressForStation(value)
-                        }))
-                      }}
-                      required
-                    >
-                      <SelectTrigger className="mt-1">
-                        <SelectValue placeholder="Sélectionner une station" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value={CodeStation.CODE_00}>Siège</SelectItem>
-                        <SelectItem value={CodeStation.CODE_06}>Cambre d&apos;Az</SelectItem>
-                        <SelectItem value={CodeStation.CODE_07}>Porté-Puymorens</SelectItem>
-                        <SelectItem value={CodeStation.CODE_08}>Formiguères</SelectItem>
-                        <SelectItem value={CodeStation.CODE_999}>Restauration</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                    <div className="md:col-span-1">
+                      <Label htmlFor="codeStation" className="text-sm font-medium">
+                        Station *
+                      </Label>
+                      <Select
+                        value={nouvelleDemande.codeStation}
+                        onValueChange={(value: CodeStation) => {
+                          gererChangementChamp("codeStation", value)
+                          // Préremplir l'adresse de livraison lors du choix de la station si vide
+                          setNouvelleDemande(prev => ({
+                            ...prev,
+                            deliveryAddress: prev.deliveryAddress || getDefaultDeliveryAddressForStation(value)
+                          }))
+                        }}
+                        required
+                      >
+                        <SelectTrigger className="mt-1">
+                          <SelectValue placeholder="Sélectionner une station" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value={CodeStation.CODE_00}>Siège</SelectItem>
+                          <SelectItem value={CodeStation.CODE_06}>Cambre d&apos;Az</SelectItem>
+                          <SelectItem value={CodeStation.CODE_07}>Porté-Puymorens</SelectItem>
+                          <SelectItem value={CodeStation.CODE_08}>Formiguères</SelectItem>
+                          <SelectItem value={CodeStation.CODE_999}>Restauration</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
 
-                  <div>
-                    <Label htmlFor="description" className="text-sm font-medium">
-                      Description
-                    </Label>
-                    <Input
-                      id="description"
-                      value={nouvelleDemande.description}
-                      onChange={(e) => gererChangementChamp("description", e.target.value)}
-                      placeholder="Description de la demande..."
-                      className="mt-1"
-                    />
-                  </div>
+                    <div className="md:col-span-1">
+                      <Label htmlFor="description" className="text-sm font-medium">
+                        Description
+                      </Label>
+                      <Input
+                        id="description"
+                        value={nouvelleDemande.description}
+                        onChange={(e) => gererChangementChamp("description", e.target.value)}
+                        placeholder="Description de la demande..."
+                        className="mt-1"
+                      />
+                    </div>
 
-                  <div>
-                    <Label htmlFor="deliveryDate" className="text-sm font-medium">
-                      Date de livraison souhaitée
-                    </Label>
-                    <Input
-                      id="deliveryDate"
-                      type="date"
-                      value={nouvelleDemande.deliveryDate}
-                      onChange={(e) => gererChangementChamp("deliveryDate", e.target.value)}
-                      className="mt-1"
-                    />
-                  </div>
+                    <div className="md:col-span-1">
+                      <Label htmlFor="deliveryDate" className="text-sm font-medium">
+                        Date de livraison souhaitée
+                      </Label>
+                      <Input
+                        id="deliveryDate"
+                        type="date"
+                        value={nouvelleDemande.deliveryDate}
+                        onChange={(e) => gererChangementChamp("deliveryDate", e.target.value)}
+                        className="mt-1"
+                      />
+                    </div>
 
-                  <div>
-                    <Label htmlFor="deliveryAddress" className="text-sm font-medium">
-                      Adresse de livraison
-                    </Label>
-                    <Textarea
-                      id="deliveryAddress"
-                      value={nouvelleDemande.deliveryAddress}
-                      onChange={(e) => gererChangementChamp("deliveryAddress", e.target.value)}
-                      placeholder="Adresse de livraison"
-                      className="mt-1"
-                      rows={2}
-                    />
-                  </div>
+                    <div className="md:col-span-2">
+                      <Label htmlFor="deliveryAddress" className="text-sm font-medium">
+                        Adresse de livraison
+                      </Label>
+                      <Textarea
+                        id="deliveryAddress"
+                        value={nouvelleDemande.deliveryAddress}
+                        onChange={(e) => gererChangementChamp("deliveryAddress", e.target.value)}
+                        placeholder="Adresse de livraison"
+                        className="mt-1"
+                        rows={2}
+                      />
+                    </div>
 
-                  <div>
-                    <Label htmlFor="providerName" className="text-sm font-medium">
-                      Fournisseur - Nom
-                    </Label>
-                    <Input
-                      id="providerName"
-                      value={nouvelleDemande.providerName}
-                      onChange={(e) => gererChangementChamp("providerName", e.target.value)}
-                      placeholder="Nom du fournisseur"
-                      className="mt-1"
-                    />
-                  </div>
+                    <div className="md:col-span-1">
+                      <Label htmlFor="providerName" className="text-sm font-medium">
+                        Fournisseur - Nom
+                      </Label>
+                      <Input
+                        id="providerName"
+                        value={nouvelleDemande.providerName}
+                        onChange={(e) => gererChangementChamp("providerName", e.target.value)}
+                        placeholder="Nom du fournisseur"
+                        className="mt-1"
+                      />
+                    </div>
 
-                  <div>
-                    <Label htmlFor="providerAddress" className="text-sm font-medium">
-                      Fournisseur - Adresse
-                    </Label>
-                    <Textarea
-                      id="providerAddress"
-                      value={nouvelleDemande.providerAddress}
-                      onChange={(e) => gererChangementChamp("providerAddress", e.target.value)}
-                      placeholder="Adresse du fournisseur"
-                      className="mt-1"
-                      rows={2}
-                    />
-                  </div>
+                    <div className="md:col-span-1">
+                      <Label htmlFor="providerAddress" className="text-sm font-medium">
+                        Fournisseur - Adresse
+                      </Label>
+                      <Textarea
+                        id="providerAddress"
+                        value={nouvelleDemande.providerAddress}
+                        onChange={(e) => gererChangementChamp("providerAddress", e.target.value)}
+                        placeholder="Adresse du fournisseur"
+                        className="mt-1"
+                        rows={2}
+                      />
+                    </div>
 
-                  <div>
-                    <Label htmlFor="devis" className="text-sm font-medium">
-                      Devis (optionnel)
-                    </Label>
-                    <Input
-                      id="devis"
-                      type="file"
-                      accept=".pdf"
-                      multiple
-                      onChange={(e) => gererChangementFichiers(e.target.files ? Array.from(e.target.files) : [])}
-                      className="mt-1"
-                    />
+                    <div className="md:col-span-2">
+                      <Label htmlFor="devis" className="text-sm font-medium">
+                        Devis (optionnel)
+                      </Label>
+                      <Input
+                        id="devis"
+                        type="file"
+                        accept=".pdf"
+                        multiple
+                        onChange={(e) => gererChangementFichiers(e.target.files ? Array.from(e.target.files) : [])}
+                        className="mt-1"
+                      />
+                    </div>
                   </div>
 
                   <div className="flex items-center justify-between pt-4 border-t">
