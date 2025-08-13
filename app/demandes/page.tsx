@@ -558,7 +558,7 @@ export default function DemandesPage() {
         <Card>
           <CardHeader>
             <CardTitle>Demandes ({demandesFiltrees.length})</CardTitle>
-            <CardDescription>Gérer et suivre toutes les demandes d&aposachat</CardDescription>
+            <CardDescription>Gérer et suivre toutes les demandes d&apos;achat</CardDescription>
           </CardHeader>
           <CardContent>
             <Table>
