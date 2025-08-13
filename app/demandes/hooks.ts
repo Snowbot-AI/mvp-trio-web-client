@@ -13,12 +13,28 @@ const createHeaders = (contentType?: string) => {
   return headers;
 };
 
+// Normalise les données avant envoi pour respecter les attentes du backend
+// - convertit les chaînes vides en null pour les champs optionnels (comment)
+const normalizeDemandeForSubmission = (data: DemandeFormData): DemandeFormData => {
+  const rawComment = data.comment ?? undefined;
+  const trimmedComment = typeof rawComment === 'string' ? rawComment.trim() : rawComment ?? null;
+  const normalizedComment = trimmedComment === '' ? null : trimmedComment;
+
+  return {
+    ...data,
+    comment: normalizedComment,
+  };
+};
+
 // Fonction utilitaire pour créer un FormData équivalent à la commande curl
 const createFormDataFromJson = (jsonData: DemandeFormData, files?: File[]): FormData => {
   const formData = new FormData()
 
+  // Normaliser les données (ex: commentaire vide => null)
+  const normalized = normalizeDemandeForSubmission(jsonData)
+
   // Créer un fichier JSON à partir des données (équivalent à @test.json)
-  const jsonBlob = new Blob([JSON.stringify(jsonData, null, 2)], {
+  const jsonBlob = new Blob([JSON.stringify(normalized, null, 2)], {
     type: 'application/json'
   })
   const jsonFile = new File([jsonBlob], 'request.json', { type: 'application/json' })

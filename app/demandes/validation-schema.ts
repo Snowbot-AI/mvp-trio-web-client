@@ -72,7 +72,7 @@ export const DemandeSchema = z.object({
   delivery: DeliverySchema,
   total: TotalSchema,
   files: z.array(FileSchema).optional(),
-  comment: z.string().optional(),
+  comment: z.string().optional().nullable(),
   signatureDemandeur: z.boolean().optional(),
   validationResponsable: z.boolean().optional(),
 })
