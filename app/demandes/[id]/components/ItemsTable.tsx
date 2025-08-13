@@ -81,7 +81,7 @@ export function ItemsTable({
                         Articles commandés
                     </div>
                     {modeEdition && (
-                        <Button size="sm" onClick={onAddItem}>
+                        <Button size="sm" onClick={onAddItem} disabled={ajoutArticle} >
                             <Plus className="h-4 w-4 mr-2" />
                             Ajouter
                         </Button>
