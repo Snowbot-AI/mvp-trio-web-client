@@ -289,6 +289,20 @@ export default function DetailDemande() {
     })
   }
 
+  // Fonction pour sauvegarder en mode brouillon sans validation
+  // Cette fonction permet de sauvegarder une demande même si elle contient des erreurs de validation
+  // Utile pour permettre aux utilisateurs de sauvegarder leur travail en cours
+  const handleSaveDraft = () => {
+    const currentData = watch()
+
+    // Sanitize: retirer les entrées falsy (ex: null) éventuellement présentes dans items
+    const sanitizedItems = Array.isArray(currentData.items) ? currentData.items.filter(Boolean) : []
+    const dataSanitized: DemandeFormData = { ...currentData, items: sanitizedItems as DemandeFormData['items'] }
+
+    // Sauvegarder directement sans validation
+    gererSauvegarde(dataSanitized, filesToUpload)
+  }
+
   const supprimerArticle = (index: number) => {
     remove(index)
   }
@@ -359,7 +373,16 @@ export default function DetailDemande() {
         confirmerAjoutArticle()
       }
     }
-    handleSave()
+
+    // Logique conditionnelle selon le statut
+    const currentStatus = watch("status")
+    if (currentStatus === PurchaseRequestStatus.BROUILLON) {
+      // En mode brouillon, sauvegarder sans validation
+      handleSaveDraft()
+    } else {
+      // Pour les autres statuts, utiliser la validation normale
+      handleSave()
+    }
   }
 
   // Handlers pour les fichiers

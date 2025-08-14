@@ -59,7 +59,13 @@ export function ActionButtons({
     onValidateAndSubmit,
 }: ActionButtonsProps) {
     // Fonction pour vérifier s'il y a des erreurs de validation
-    const hasValidationErrors = () => getValidationErrorCount() > 0
+    const hasValidationErrors = () => {
+        // En mode brouillon, on ignore les erreurs de validation
+        if (demande.status === PurchaseRequestStatus.BROUILLON) {
+            return false
+        }
+        return getValidationErrorCount() > 0
+    }
 
     // Fonction pour compter le nombre d'erreurs de validation
     const getValidationErrorCount = () => {
@@ -113,11 +119,12 @@ export function ActionButtons({
                 <Button
                     onClick={onSave}
                     disabled={isPending}
-                    className={hasValidationErrors() ? 'bg-red-500 hover:bg-red-600' : ''}
+                    className={hasValidationErrors() && demande.status !== PurchaseRequestStatus.BROUILLON ? 'bg-red-500 hover:bg-red-600' : ''}
                 >
                     <Save className="h-4 w-4 mr-2" />
                     {isPending ? 'Sauvegarde...' :
-                        hasValidationErrors() ? `Erreurs de validation (${getValidationErrorCount()})` : 'Sauvegarder'}
+                        demande.status === PurchaseRequestStatus.BROUILLON ? 'Sauvegarder brouillon' :
+                            hasValidationErrors() ? `Erreurs de validation (${getValidationErrorCount()})` : 'Sauvegarder'}
                 </Button>
             </div>
         )

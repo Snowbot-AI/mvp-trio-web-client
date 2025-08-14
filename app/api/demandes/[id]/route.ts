@@ -148,18 +148,30 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
             return NextResponse.json({ error: 'Unsupported request part type' }, { status: 400 })
         }
 
-        const validation = DemandeSchema.safeParse(requestJson)
-        if (!validation.success) {
-            return NextResponse.json({ error: 'Invalid request data', details: validation.error.format() }, { status: 400 })
+        // Vérifier si c'est un brouillon pour permettre la sauvegarde sans validation
+        const isDraft = requestJson && typeof requestJson === 'object' && 'status' in requestJson && requestJson.status === 'BROUILLON'
+
+        let validatedData: unknown
+
+        if (isDraft) {
+            // En mode brouillon, on accepte les données même avec des erreurs de validation
+            validatedData = requestJson
+        } else {
+            // Pour les autres statuts, validation stricte obligatoire
+            const validation = DemandeSchema.safeParse(requestJson)
+            if (!validation.success) {
+                return NextResponse.json({ error: 'Invalid request data', details: validation.error.format() }, { status: 400 })
+            }
+            validatedData = validation.data
         }
 
         // Ensure path id matches body id if present
-        if (validation.data.id && validation.data.id !== id) {
+        if (validatedData && typeof validatedData === 'object' && 'id' in validatedData && validatedData.id && validatedData.id !== id) {
             return NextResponse.json({ error: 'Path id and body id mismatch' }, { status: 400 })
         }
 
         const forwardForm = new FormData()
-        const jsonBlob = new Blob([JSON.stringify(validation.data)], { type: 'application/json' })
+        const jsonBlob = new Blob([JSON.stringify(validatedData)], { type: 'application/json' })
         forwardForm.append('request', jsonBlob, 'request.json')
 
         const files = form.getAll('files')
