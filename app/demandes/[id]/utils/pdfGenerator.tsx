@@ -320,7 +320,7 @@ export const DemandePDF = ({ demande }: { demande: DemandeFormData }) => (
                         <Text style={styles.infoValue}>66210 Saint-Pierre dels Forcats</Text>
                         <Text style={styles.infoValue}>Mails facturation :</Text>
                         <Text style={styles.infoValue}>{demande.billing?.emails?.[0] || ''}</Text>
-                        <Text style={styles.infoValue}>SIRET 913 727 871 00034</Text>
+                        <Text style={styles.infoValue}>SIRET {demande.billing?.siret || ''}</Text>
                     </View>
                     <View style={styles.infoColumn}>
                         <Text style={styles.infoLabel}>N° demande :</Text>
