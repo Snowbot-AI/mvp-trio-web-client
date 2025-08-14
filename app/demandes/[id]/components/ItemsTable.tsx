@@ -10,6 +10,7 @@ import { useEffect } from "react"
 import { TrioService, ItemType } from "../../types"
 import { UseFormRegister, UseFormSetValue, UseFormWatch, FieldErrors, FieldArrayWithId, Control, useWatch } from "react-hook-form"
 import { DemandeFormData } from "../../validation-schema"
+import { formatPrice } from "@/lib/utils"
 
 interface ItemsTableProps {
     demande: DemandeFormData
@@ -113,8 +114,8 @@ export function ItemsTable({
                                     <TableCell>{article.referenceDevis || '-'}</TableCell>
                                     <TableCell>{article.description}</TableCell>
                                     <TableCell>{article.quantity}</TableCell>
-                                    <TableCell>{article.unitPrice ? article.unitPrice.toFixed(2) : '0.00'} €</TableCell>
-                                    <TableCell className="font-medium">{(article.quantity * article.unitPrice).toFixed(2)} €</TableCell>
+                                    <TableCell>{formatPrice(article.unitPrice || 0)}</TableCell>
+                                    <TableCell className="font-medium">{formatPrice(article.quantity * article.unitPrice)}</TableCell>
                                     {modeEdition && (
                                         <TableCell>
                                             <Button size="sm" variant="destructive" onClick={() => onDeleteItem(index)}>
@@ -244,7 +245,7 @@ export function ItemsTable({
                                     </TableCell>
                                     <TableCell>
                                         <div className="px-3 py-2 bg-gray-50 rounded-md border border-input text-sm">
-                                            {watchedPrice.toFixed(2)} €
+                                            {formatPrice(watchedPrice)}
                                         </div>
                                     </TableCell>
                                     <TableCell className="flex gap-2">
