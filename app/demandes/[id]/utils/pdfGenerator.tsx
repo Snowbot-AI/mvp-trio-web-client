@@ -358,8 +358,8 @@ export const DemandePDF = ({ demande }: { demande: DemandeFormData }) => (
 
                 {/* Cases à cocher pour validation */}
                 <View style={styles.checkboxRow}>
-                    <Text style={styles.checkbox}>X</Text>
-                    <Text style={styles.checkboxLabel}>Demande de validation : achats urgents</Text>
+                    <Text style={styles.checkbox}>{demande.priority === 'HIGH' ? 'X' : ''}</Text>
+                    <Text style={styles.checkboxLabel}>Demande urgente</Text>
                 </View>
             </View>
 
