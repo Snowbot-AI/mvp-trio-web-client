@@ -398,7 +398,7 @@ export default function DemandesPage() {
                       <Input
                         id="devis"
                         type="file"
-                        accept=".pdf"
+                        accept=".pdf,.jpg,.jpeg,.png"
                         multiple
                         onChange={(e) => gererChangementFichiers(e.target.files ? Array.from(e.target.files) : [])}
                         className="mt-1"
