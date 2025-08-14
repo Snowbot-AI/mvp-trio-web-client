@@ -254,22 +254,11 @@ const normalizeFrenchSpaces = (value: string): string => value.replace(/\u202F/g
 const formatAmount = (amount: number): string => {
     const formatted = new Intl.NumberFormat('fr-FR', {
         style: 'currency',
-        currency: 'EUR'
+        currency: 'EUR',
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 2
     }).format(amount)
     return normalizeFrenchSpaces(formatted)
-}
-
-// Fonction pour formater les montants simples (sans symbole €)
-const formatSimpleAmount = (amount: number | string): string => {
-    const numeric = typeof amount === 'number' ? amount : Number(amount)
-    if (Number.isFinite(numeric)) {
-        const formatted = new Intl.NumberFormat('fr-FR', {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2
-        }).format(numeric)
-        return normalizeFrenchSpaces(formatted)
-    }
-    return String(amount)
 }
 // Fonction pour générer le numéro de demande
 const generateRequestNumber = (demande: DemandeFormData) => {
@@ -277,8 +266,14 @@ const generateRequestNumber = (demande: DemandeFormData) => {
     const year = date.getFullYear()
     const month = String(date.getMonth() + 1).padStart(2, '0')
     const day = String(date.getDate()).padStart(2, '0')
-    const stationCode = demande.codeStation
-    return `${year}-${month}-${day}-${stationCode}-PISTES-TYYNY`
+
+    // Utiliser le service du premier article ou un service par défaut
+    const serviceCode = demande.items?.[0]?.service || ''
+
+    // Utiliser le nom du fournisseur ou un nom par défaut
+    const providerName = demande.provider?.name || ''
+
+    return `${year}-${month}-${day}-${serviceCode}-${providerName}`
 }
 
 
@@ -323,7 +318,7 @@ export const DemandePDF = ({ demande }: { demande: DemandeFormData }) => (
                         <Text style={styles.infoValue}>SPL Trio-Pyrénées</Text>
                         <Text style={styles.infoValue}>Site {getStationName(demande.codeStation)}</Text>
                         <Text style={styles.infoValue}>66210 Saint-Pierre dels Forcats</Text>
-                        <Text style={styles.infoValue}>mails facturation :</Text>
+                        <Text style={styles.infoValue}>Mails facturation :</Text>
                         <Text style={styles.infoValue}>{demande.billing?.emails?.[0] || ''}</Text>
                         <Text style={styles.infoValue}>SIRET 913 727 871 00034</Text>
                     </View>
@@ -347,7 +342,7 @@ export const DemandePDF = ({ demande }: { demande: DemandeFormData }) => (
                         <Text style={styles.infoValue}>66210 Saint-Pierre dels Forcats</Text>
                         <Text style={styles.infoValue}></Text>
                         <Text style={styles.infoValue}>Tel :</Text>
-                        <Text style={styles.infoValue}>courriel :</Text>
+                        <Text style={styles.infoValue}>Mail :</Text>
                     </View>
                     <View style={styles.infoColumn}>
                         <Text style={styles.infoLabel}>Fournisseur :</Text>
@@ -356,7 +351,7 @@ export const DemandePDF = ({ demande }: { demande: DemandeFormData }) => (
                         <Text style={styles.infoValue}>{demande.provider?.address || 'ZI du Bec-rue jacquard 42500 LE CHAMBON-FEUGEROLLES'}</Text>
                         <Text style={styles.infoLabel}>Tel :</Text>
                         <Text style={styles.infoValue}>{demande.provider?.tel || '04 77 40 21 30'}</Text>
-                        <Text style={styles.infoLabel}>courriel :</Text>
+                        <Text style={styles.infoLabel}>Mail :</Text>
                         <Text style={styles.infoValue}>{demande.provider?.email || 'contact@tyyny.fr'}</Text>
                     </View>
                 </View>
@@ -391,8 +386,8 @@ export const DemandePDF = ({ demande }: { demande: DemandeFormData }) => (
                         <Text style={[styles.tableCell, styles.colINVEST]}>{item.itemType === 'invest' ? 'X' : ''}</Text>
                         <Text style={[styles.tableCell, styles.colFONCT]}>{item.itemType === 'funct' ? 'X' : ''}</Text>
                         <Text style={[styles.tableCell, styles.colQuantite]}>{item.quantity}</Text>
-                        <Text style={[styles.tableCell, styles.colPrixUnit]}>{formatSimpleAmount(item.unitPrice)}</Text>
-                        <Text style={[styles.tableCell, styles.colMontant, styles.colNoBorder]}>{formatSimpleAmount(item.price)}</Text>
+                        <Text style={[styles.tableCell, styles.colPrixUnit]}>{formatAmount(item.unitPrice)}</Text>
+                        <Text style={[styles.tableCell, styles.colMontant, styles.colNoBorder]}>{formatAmount(item.price)}</Text>
                     </View>
                 )) || []}
 
@@ -405,15 +400,15 @@ export const DemandePDF = ({ demande }: { demande: DemandeFormData }) => (
                     <View style={styles.totalBox}>
                         <View style={styles.totalRow}>
                             <Text style={styles.totalLabel}>Total commande HT</Text>
-                            <Text style={styles.totalValue}>{formatSimpleAmount(demande.total?.orderTotal || 0)}</Text>
+                            <Text style={styles.totalValue}>{formatAmount(demande.total?.orderTotal || 0)}</Text>
                         </View>
                         <View style={styles.totalRow}>
                             <Text style={styles.totalLabel}>Participation livraison</Text>
-                            <Text style={styles.totalValue}>-</Text>
+                            <Text style={styles.totalValue}>{formatAmount(demande.total?.deliveryTotal || 0)}</Text>
                         </View>
                         <View style={styles.totalRow}>
                             <Text style={styles.totalLabel}>Frais de facturation</Text>
-                            <Text style={styles.totalValue}>-</Text>
+                            <Text style={styles.totalValue}>{formatAmount(demande.total?.billingFees || 0)}</Text>
                         </View>
 
                         <View style={styles.grandTotalRow}>
