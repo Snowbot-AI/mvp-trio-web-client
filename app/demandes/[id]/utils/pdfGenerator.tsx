@@ -268,7 +268,7 @@ const generateRequestNumber = (demande: DemandeFormData) => {
     const day = String(date.getDate()).padStart(2, '0')
 
     // Utiliser le service du premier article ou un service par défaut
-    const serviceCode = demande.items?.[0]?.service || ''
+    const serviceCode = demande.items?.map(item => item.service).toSorted().join('-') || ''
 
     // Utiliser le nom du fournisseur ou un nom par défaut
     const providerName = demande.provider?.name || ''
