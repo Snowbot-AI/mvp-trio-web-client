@@ -631,6 +631,11 @@ export default function DetailDemande() {
                 deliveryTotal={participationLivraison}
                 billingFees={fraisFacturation}
                 total={totalHT}
+                modeEdition={modeEdition}
+                register={register}
+                watch={watch}
+                setValue={setValue}
+                errors={errors}
               />
             </div>
           </div>
