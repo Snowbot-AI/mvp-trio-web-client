@@ -366,7 +366,7 @@ export default function DemandesPage() {
 
                     <div className="md:col-span-1">
                       <Label htmlFor="providerName" className="text-sm font-medium">
-                        Fournisseur - Nom
+                        Nom - Fournisseur
                       </Label>
                       <Input
                         id="providerName"
@@ -379,7 +379,7 @@ export default function DemandesPage() {
 
                     <div className="md:col-span-1">
                       <Label htmlFor="providerAddress" className="text-sm font-medium">
-                        Fournisseur - Adresse
+                        Adresse - Fournisseur
                       </Label>
                       <Textarea
                         id="providerAddress"
