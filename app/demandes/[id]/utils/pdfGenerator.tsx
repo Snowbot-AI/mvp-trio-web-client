@@ -234,22 +234,6 @@ const styles = StyleSheet.create({
         paddingTop: 3,
     },
 
-    // Commentaires
-    commentSection: {
-        marginBottom: 8,
-        border: '1px solid #000000',
-        padding: 6,
-        minHeight: 40,
-    },
-    commentLabel: {
-        fontSize: 8,
-        fontWeight: 'bold',
-        marginBottom: 5,
-    },
-    commentText: {
-        fontSize: 9,
-        lineHeight: 1.2,
-    },
 })
 
 // Fonction pour formater les dates
@@ -433,11 +417,6 @@ export const DemandePDF = ({ demande }: { demande: DemandeFormData }) => (
                 </View>
             </View>
 
-            {/* Section commentaires */}
-            <View style={styles.commentSection}>
-                <Text style={styles.commentLabel}>Commentaire :</Text>
-                <Text style={styles.commentText}>{demande.comment || ''}</Text>
-            </View>
 
             {/* Section signature */}
             <View style={styles.signatureSection}>
