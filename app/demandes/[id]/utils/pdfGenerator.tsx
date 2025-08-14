@@ -247,22 +247,30 @@ const formatDate = (dateString: string | null) => {
     })
 }
 
+// Remplace les espaces insécables étroits (U+202F) et insécables (U+00A0) par des espaces normaux pour compatibilité PDF
+const normalizeFrenchSpaces = (value: string): string => value.replace(/\u202F/g, ' ').replace(/\u00A0/g, ' ')
+
 // Fonction pour formater les montants
-const formatAmount = (amount: number) => {
-    return new Intl.NumberFormat('fr-FR', {
+const formatAmount = (amount: number): string => {
+    const formatted = new Intl.NumberFormat('fr-FR', {
         style: 'currency',
         currency: 'EUR'
     }).format(amount)
+    return normalizeFrenchSpaces(formatted)
 }
 
 // Fonction pour formater les montants simples (sans symbole €)
-const formatSimpleAmount = (amount: number) => {
-    return new Intl.NumberFormat('fr-FR', {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2
-    }).format(amount)
+const formatSimpleAmount = (amount: number | string): string => {
+    const numeric = typeof amount === 'number' ? amount : Number(amount)
+    if (Number.isFinite(numeric)) {
+        const formatted = new Intl.NumberFormat('fr-FR', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        }).format(numeric)
+        return normalizeFrenchSpaces(formatted)
+    }
+    return String(amount)
 }
-
 // Fonction pour générer le numéro de demande
 const generateRequestNumber = (demande: DemandeFormData) => {
     const date = new Date(demande.date)
@@ -407,9 +415,7 @@ export const DemandePDF = ({ demande }: { demande: DemandeFormData }) => (
                             <Text style={styles.totalLabel}>Frais de facturation</Text>
                             <Text style={styles.totalValue}>-</Text>
                         </View>
-                        <View style={styles.grandTotalRow}>
-                            <Text style={styles.grandTotalText}>Total HT: {formatSimpleAmount(demande.total?.total || 0)}</Text>
-                        </View>
+
                         <View style={styles.grandTotalRow}>
                             <Text style={styles.grandTotalText}>Total HT: {formatAmount(demande.total?.total || 0)}</Text>
                         </View>
