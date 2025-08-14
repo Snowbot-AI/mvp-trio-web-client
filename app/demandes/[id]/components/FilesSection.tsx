@@ -33,6 +33,13 @@ export function FilesSection({
     onSetFileToDelete,
     onConfirmDeleteFile,
 }: FilesSectionProps) {
+
+    const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>, category: string) => {
+        onUploadFile(event, category)
+        // Réinitialiser l'input pour permettre de re-sélectionner le même fichier
+        event.target.value = ''
+    }
+
     return (
         <>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -56,7 +63,7 @@ export function FilesSection({
                                         type="file"
                                         multiple
                                         accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-                                        onChange={(e) => onUploadFile(e, "quotations")}
+                                        onChange={(e) => handleFileUpload(e, "quotations")}
                                         className="hidden"
                                     />
                                     <Button
@@ -72,8 +79,8 @@ export function FilesSection({
                         )}
 
                         <div className="space-y-2">
-                            {watch("files")?.filter((fichier: FileType) => fichier.category === "quotations").map((fichier: FileType) => (
-                                <div key={fichier.id} className="flex items-center justify-between p-3 border rounded-lg">
+                            {watch("files")?.filter((fichier: FileType) => fichier.category === "quotations").map((fichier: FileType, index: number) => (
+                                <div key={fichier.id || `${fichier.name}-${fichier.uploadInstant}-${index}`} className="flex items-center justify-between p-3 border rounded-lg">
                                     <div className="flex items-center gap-3">
                                         <FileText className="h-5 w-5 text-gray-500" />
                                         <div>
@@ -82,9 +89,11 @@ export function FilesSection({
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-2">
-                                        <Button size="sm" variant="outline" onClick={() => onDownloadFile(fichier.id || "", fichier.name)}>
-                                            Télécharger
-                                        </Button>
+                                        {!modeEdition && (
+                                            <Button size="sm" variant="outline" onClick={() => onDownloadFile(fichier.id || "", fichier.name)}>
+                                                Télécharger
+                                            </Button>
+                                        )}
                                         {modeEdition && (
                                             <Button
                                                 size="sm"
@@ -125,7 +134,7 @@ export function FilesSection({
                                         type="file"
                                         multiple
                                         accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-                                        onChange={(e) => onUploadFile(e, "invoices")}
+                                        onChange={(e) => handleFileUpload(e, "invoices")}
                                         className="hidden"
                                     />
                                     <Button
@@ -141,8 +150,8 @@ export function FilesSection({
                         )}
 
                         <div className="space-y-2">
-                            {watch("files")?.filter((fichier: FileType) => fichier.category === "invoices").map((fichier: FileType) => (
-                                <div key={fichier.id} className="flex items-center justify-between p-3 border rounded-lg">
+                            {watch("files")?.filter((fichier: FileType) => fichier.category === "invoices").map((fichier: FileType, index: number) => (
+                                <div key={fichier.id || `${fichier.name}-${fichier.uploadInstant}-${index}`} className="flex items-center justify-between p-3 border rounded-lg">
                                     <div className="flex items-center gap-3">
                                         <FileText className="h-5 w-5 text-gray-500" />
                                         <div>
@@ -151,9 +160,11 @@ export function FilesSection({
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-2">
-                                        <Button size="sm" variant="outline" onClick={() => onDownloadFile(fichier.id || "", fichier.name)}>
-                                            Télécharger
-                                        </Button>
+                                        {!modeEdition && (
+                                            <Button size="sm" variant="outline" onClick={() => onDownloadFile(fichier.id || "", fichier.name)}>
+                                                Télécharger
+                                            </Button>
+                                        )}
                                         {modeEdition && (
                                             <Button
                                                 size="sm"

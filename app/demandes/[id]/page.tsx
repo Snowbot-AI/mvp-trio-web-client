@@ -386,7 +386,14 @@ export default function DetailDemande() {
     if (fichierASupprimer) {
       // Supprimer du formulaire
       const currentFiles = watch("files") || []
-      const updatedFiles = currentFiles.filter((f: FileType) => f.id !== fichierASupprimer.id)
+      const updatedFiles = currentFiles.filter((f: FileType) => {
+        // Si le fichier a un ID, comparer par ID
+        if (f.id && fichierASupprimer.id) {
+          return f.id !== fichierASupprimer.id
+        }
+        // Sinon, comparer par nom (pour les fichiers nouvellement uploadés)
+        return f.name !== fichierASupprimer.name
+      })
       setValue('files', updatedFiles)
 
       // Supprimer des fichiers à uploader si c'est un nouveau fichier
