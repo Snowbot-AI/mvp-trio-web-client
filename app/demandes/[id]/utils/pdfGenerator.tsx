@@ -273,7 +273,10 @@ const generateRequestNumber = (demande: DemandeFormData) => {
     // Utiliser le nom du fournisseur ou un nom par défaut
     const providerName = demande.provider?.name || ''
 
-    return `${year}-${month}-${day}-${serviceCode}-${providerName}`
+    // code station
+    const stationCode = demande.codeStation
+
+    return `${year}-${month}-${day}-${serviceCode}-${stationCode}-${providerName}`
 }
 
 
@@ -346,13 +349,13 @@ export const DemandePDF = ({ demande }: { demande: DemandeFormData }) => (
                     </View>
                     <View style={styles.infoColumn}>
                         <Text style={styles.infoLabel}>Fournisseur :</Text>
-                        <Text style={styles.infoValue}>{demande.provider?.name || 'TYYNY'}</Text>
+                        <Text style={styles.infoValue}>{demande.provider?.name || ''}</Text>
                         <Text style={styles.infoLabel}>Adresse :</Text>
-                        <Text style={styles.infoValue}>{demande.provider?.address || 'ZI du Bec-rue jacquard 42500 LE CHAMBON-FEUGEROLLES'}</Text>
+                        <Text style={styles.infoValue}>{demande.provider?.address || ''}</Text>
                         <Text style={styles.infoLabel}>Tel :</Text>
-                        <Text style={styles.infoValue}>{demande.provider?.tel || '04 77 40 21 30'}</Text>
+                        <Text style={styles.infoValue}>{demande.provider?.tel || ''}</Text>
                         <Text style={styles.infoLabel}>Mail :</Text>
-                        <Text style={styles.infoValue}>{demande.provider?.email || 'contact@tyyny.fr'}</Text>
+                        <Text style={styles.infoValue}>{demande.provider?.email || ''}</Text>
                     </View>
                 </View>
 
