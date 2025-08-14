@@ -93,13 +93,13 @@ export function ItemsTable({
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead>Service</TableHead>
-                                <TableHead>BudgetType</TableHead>
+                                <TableHead>Service *</TableHead>
+                                <TableHead>BudgetType *</TableHead>
                                 <TableHead>ItemType</TableHead>
                                 <TableHead>Référence devis</TableHead>
-                                <TableHead>Désignation</TableHead>
-                                <TableHead>Qté</TableHead>
-                                <TableHead>Prix unit. HT</TableHead>
+                                <TableHead>Désignation *</TableHead>
+                                <TableHead>Qté *</TableHead>
+                                <TableHead>Prix unit. HT *</TableHead>
                                 <TableHead>Montant HT</TableHead>
                                 {modeEdition && <TableHead>Actions</TableHead>}
                             </TableRow>
