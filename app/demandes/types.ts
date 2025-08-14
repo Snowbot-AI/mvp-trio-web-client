@@ -58,11 +58,6 @@ export enum TrioService {
    * USI for 'Snowmaker' (Usine à neige).
    */
   USI = "USI",
-
-  /**
-   * AUT for 'Autre'.
-   */
-  AUT = "AUT"
 }
 
 /**

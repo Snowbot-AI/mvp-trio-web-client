@@ -67,7 +67,6 @@ export function ItemsTable({
         REST: 'Restaurant',
         RM: 'Remontée mécanique',
         USI: 'Snowmaker (Usine à neige)',
-        AUT: 'Autre'
     }
 
     const newIndex = items.length
