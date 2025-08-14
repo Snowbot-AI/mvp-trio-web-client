@@ -100,7 +100,7 @@ export function getStationName(codeStation: CodeStation): string {
     case CodeStation.CODE_00:
       return "Siège"
     case CodeStation.CODE_06:
-      return "Cambre d'Az"
+      return "Cambre d'Aze"
     case CodeStation.CODE_07:
       return "Porté-Puymorens"
     case CodeStation.CODE_08:
