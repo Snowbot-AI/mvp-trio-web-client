@@ -313,7 +313,7 @@ export default function DetailDemande() {
       return
     }
 
-    const budgetType = watch(`items.${newItemIndex}.budgetType`) || "B"
+    const budgetType = watch(`items.${newItemIndex}.budgetType`) || "H"
     const itemType = watch(`items.${newItemIndex}.itemType`) || null
     const referenceDevis = watch(`items.${newItemIndex}.referenceDevis`) || undefined
     const rawQuantity = watch(`items.${newItemIndex}.quantity`)

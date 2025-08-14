@@ -4,9 +4,7 @@ import { z } from 'zod'
 const itemSchema = z.object({
   description: z.string().min(1, "La description est requise"),
   service: z.string().min(1, "Le service est requis"),
-  budgetType: z.string().refine((val) => val === "B" || val === "H", {
-    message: "Le type de budget doit être B ou H"
-  }),
+  budgetType: z.string().regex(/^(?:[Bb]\d{1,4}|[Hh])$/, "Le type de budget doit être 'H' ou correspondre au format 'B29', 'B105', etc."),
   itemType: z.string().nullable().optional(),
   referenceDevis: z.string().optional(),
   quantity: z.number().min(1, "La quantité doit être supérieure à 0"),

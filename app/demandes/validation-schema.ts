@@ -5,7 +5,7 @@ import { ItemType, PurchaseRequestStatus, CodeStation } from "./types"
 const ItemSchema = z.object({
   description: z.string().min(1, "La désignation est requise"),
   service: z.string().min(1, "Le service est requis"),
-  budgetType: z.string().regex(/^(B\d{1,4}|H)$/, "Le type de budget doit être 'H' ou correspondre au format 'B29', 'B105', etc."),
+  budgetType: z.string().regex(/^(?:[Bb]\d{1,4}|[Hh])$/, "Le type de budget doit être 'H' ou correspondre au format 'B29', 'B105', etc."),
   itemType: z.enum(ItemType).optional().nullable(),
   // Autoriser chaîne vide -> undefined sans passer l'input en unknown
   referenceDevis: z.union([z.string().trim(), z.undefined(), z.null()])
