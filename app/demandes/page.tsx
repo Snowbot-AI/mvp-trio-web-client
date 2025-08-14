@@ -393,7 +393,7 @@ export default function DemandesPage() {
 
                     <div className="md:col-span-2">
                       <Label htmlFor="devis" className="text-sm font-medium">
-                        Devis (optionnel)
+                        Devis
                       </Label>
                       <Input
                         id="devis"
