@@ -12,7 +12,7 @@ import { ArrowLeft } from "lucide-react"
 import { PurchaseRequestStatus } from "../types"
 import { getStationName } from "../types"
 import { useDemande, useUpdateDemandeWithJsonFile } from "../hooks"
-import { buildApiUrl } from "@/lib/api-config"
+import { buildApiUrl, API_CONFIG } from "@/lib/api-config"
 import { DemandeSchema, type DemandeFormData } from "../validation-schema"
 
 type FileType = {
@@ -399,7 +399,7 @@ export default function DetailDemande() {
   // Fonction pour télécharger un fichier
   const telechargerFichier = async (fileId: string, fileName: string) => {
     try {
-      const response = await fetch(buildApiUrl(`/api/files/${fileId}`))
+      const response = await fetch(buildApiUrl(API_CONFIG.endpoints.files(fileId)))
 
       if (!response.ok) {
         throw new Error(`Erreur ${response.status}: ${response.statusText}`)

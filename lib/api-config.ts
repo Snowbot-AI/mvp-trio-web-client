@@ -4,6 +4,7 @@ export const API_CONFIG = {
   endpoints: {
     demandes: '/api/demandes',
     demande: (id: string) => `/api/demandes/${id}`,
+    files: (id: string) => `/api/files/${id}`,
   },
 } as const;
 
