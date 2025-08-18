@@ -32,6 +32,8 @@ const BillingSchema = z.object({
     .refine((arr) => arr.some((v) => typeof v === 'string' && v.length > 0), {
       message: "Au moins un email est requis",
     }),
+  // Commentaire de facturation optionnel
+  comment: z.string().optional().nullable(),
 })
 
 // Schéma pour les informations du fournisseur
@@ -53,6 +55,8 @@ const DeliverySchema = z.object({
   address: z.string().min(1, "L'adresse de livraison est requise"),
   // Autoriser chaîne vide -> invalide? Ici tel est requis côté livraison, donc on garde requis
   tel: z.string().regex(/^(?:(?:\+|00)33|0)\s*[1-9](?:[\s.-]*\d{2}){4}$/, "Format de téléphone invalide"),
+  // Champ commentaire optionnel
+  comment: z.string().optional().nullable(),
 })
 
 // Schéma pour les fichiers

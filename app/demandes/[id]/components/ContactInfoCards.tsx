@@ -215,6 +215,22 @@ export function ContactInfoCards({
                             <p className="text-red-500 text-sm mt-1">{validationErrors.delivery.tel.message}</p>
                         )}
                     </div>
+
+                    <div>
+                        <Label className="text-sm font-medium">Commentaire</Label>
+                        {modeEdition ? (
+                            <Textarea
+                                {...register("delivery.comment")}
+                                rows={2}
+                                className={`mt-1 ${validationErrors.delivery?.comment ? 'border-red-500' : ''}`}
+                            />
+                        ) : (
+                            <p className="mt-1">{demande.delivery.comment || "Non spécifié"}</p>
+                        )}
+                        {validationErrors.delivery?.comment && (
+                            <p className="text-red-500 text-sm mt-1">{validationErrors.delivery.comment.message}</p>
+                        )}
+                    </div>
                 </CardContent>
             </Card>
         </div>

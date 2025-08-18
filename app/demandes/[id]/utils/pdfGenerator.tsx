@@ -166,7 +166,7 @@ const styles = StyleSheet.create({
     },
     totalGrid: {
         flexDirection: 'row',
-        justifyContent: 'flex-end',
+        justifyContent: 'space-between',
     },
     totalBox: {
         width: '200px',
@@ -197,6 +197,23 @@ const styles = StyleSheet.create({
         fontSize: 10,
         fontWeight: 'bold',
         textAlign: 'right',
+    },
+
+    // Encart commentaire de livraison
+    deliveryCommentSection: {
+        border: '1px solid #000000',
+        marginBottom: 8,
+        padding: 8,
+
+    },
+    deliveryCommentTitle: {
+        fontSize: 9,
+        fontWeight: 'bold',
+        marginBottom: 5,
+    },
+    deliveryCommentContent: {
+        fontSize: 9,
+        minHeight: 24,
     },
 
     // Section signature et validation
@@ -397,9 +414,18 @@ export const DemandePDF = ({ demande }: { demande: DemandeFormData }) => (
 
             </View>
 
+
+
             {/* Section totaux */}
             <View style={styles.totalSection}>
+
                 <View style={styles.totalGrid}>
+                    {/* Encart commentaire de livraison */}
+                    <View style={styles.deliveryCommentSection}>
+                        <Text style={styles.deliveryCommentTitle}>Commentaire de livraison : </Text>
+                        <Text style={styles.deliveryCommentContent}>{demande.delivery?.comment || ''}</Text>
+                    </View>
+
                     <View style={styles.totalBox}>
                         <View style={styles.totalRow}>
                             <Text style={styles.totalLabel}>Total commande HT</Text>
