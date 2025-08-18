@@ -108,7 +108,7 @@ export async function GET(): Promise<NextResponse> {
 
         if (upstream.status < 200 || upstream.status >= 300) {
             let details: unknown = upstream.bodyText
-            try { details = JSON.parse(upstream.bodyText) } catch { /* ignore */ }
+            try { details = JSON.parse(upstream.bodyText) } catch (e) { console.warn('[API demandes GET] Failed to parse upstream error body', e) }
             return NextResponse.json({ error: 'upstream', status: upstream.status, details }, { status: 502 })
         }
 
@@ -184,7 +184,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
         if (upstream.status < 200 || upstream.status >= 300) {
             let details: unknown = upstream.bodyText
-            try { details = JSON.parse(upstream.bodyText) } catch { /* ignore */ }
+            try { details = JSON.parse(upstream.bodyText) } catch (e) { console.warn('[API demandes POST] Failed to parse upstream error body', e) }
             return NextResponse.json({ error: 'upstream', details }, { status: 502 })
         }
 
@@ -192,6 +192,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         return NextResponse.json(created, { status: 201 })
     } catch (error) {
         const message = error instanceof Error ? error.message : 'Unknown error'
+        console.error('[API demandes POST] Proxy error', { message })
         return NextResponse.json({ error: 'proxy_error', message }, { status: 500 })
     }
 }

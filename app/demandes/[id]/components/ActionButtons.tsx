@@ -35,6 +35,7 @@ interface ActionButtonsProps {
     onShowRejectDialogChange: (show: boolean) => void
     onShowMoreInfoDialogChange: (show: boolean) => void
     onExport: () => void
+    onExportZip: () => void
     onValidateAndSubmit?: () => void
 }
 
@@ -56,6 +57,7 @@ export function ActionButtons({
     onShowRejectDialogChange,
     onShowMoreInfoDialogChange,
     onExport,
+    onExportZip,
     onValidateAndSubmit,
 }: ActionButtonsProps) {
     // Fonction pour vérifier s'il y a des erreurs de validation
@@ -272,12 +274,20 @@ export function ActionButtons({
                     </Button>
                 )}
 
-            {/* Bouton Exporter PDF - visible en SUIVI_COMPTA et REJETEE */}
+            {/* Boutons d'export - visibles en SUIVI_COMPTA et REJETEE */}
             {(demande.status === PurchaseRequestStatus.SUIVI_COMPTA || demande.status === PurchaseRequestStatus.REJETEE) && (
-                <Button variant="outline" onClick={onExport}>
-                    <Download className="h-4 w-4 mr-2" />
-                    Exporter PDF
-                </Button>
+                <>
+                    <Button variant="outline" onClick={onExport}>
+                        <Download className="h-4 w-4 mr-2" />
+                        Exporter PDF
+                    </Button>
+                    {demande.status === PurchaseRequestStatus.SUIVI_COMPTA && (
+                        <Button variant="outline" onClick={onExportZip}>
+                            <Download className="h-4 w-4 mr-2" />
+                            Exporter ZIP
+                        </Button>
+                    )}
+                </>
             )}
 
             {/* Bouton passer en Suivi Compta quand Validée */}

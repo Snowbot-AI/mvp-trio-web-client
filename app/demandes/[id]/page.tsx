@@ -416,8 +416,16 @@ export default function DetailDemande() {
 
   const handleConfirmDeleteFile = () => {
     if (fichierASupprimer) {
+      const currentStatus = watch("status")
       // Supprimer du formulaire
       const currentFiles = watch("files") || []
+      // Interdire la suppression des devis lorsque la demande est VALIDEE
+      const targetFile = currentFiles.find((f: FileType) => (f.id === fichierASupprimer.id || f.name === fichierASupprimer.name))
+      if (currentStatus === PurchaseRequestStatus.VALIDEE && targetFile?.category === 'quotations') {
+        toast.error("Impossible de supprimer un devis lorsque la demande est validée.")
+        setFichierASupprimer(null)
+        return
+      }
       const updatedFiles = currentFiles.filter((f: FileType) => {
         // Si le fichier a un ID, comparer par ID
         if (f.id && fichierASupprimer.id) {
@@ -432,7 +440,6 @@ export default function DetailDemande() {
       setFilesToUpload(prev => prev.filter(file => file.name !== fichierASupprimer.name))
 
       // Si on est en statut VALIDEE et qu'on supprime une facture, auto-sauvegarder
-      const currentStatus = watch("status")
       const deletedWasInvoice = currentFiles.some((f: FileType) => (f.id === fichierASupprimer.id || f.name === fichierASupprimer.name) && f.category === 'invoices')
       if (currentStatus === PurchaseRequestStatus.VALIDEE && deletedWasInvoice) {
         const currentData = watch()
@@ -474,6 +481,50 @@ export default function DetailDemande() {
     } catch (error) {
       console.error('Erreur lors du téléchargement:', error)
       toast.error(`Erreur lors du téléchargement de "${fileName}"`, {
+        duration: 4000,
+        style: {
+          background: 'white',
+          color: '#ef4444',
+          fontWeight: 'bold',
+          border: '1px solid #ef4444'
+        }
+      })
+    }
+  }
+
+  // Fonction pour exporter toute la demande en ZIP
+  const handleExportZip = async () => {
+    try {
+      const response = await fetch(buildApiUrl(API_CONFIG.endpoints.demandeZip(params.id)))
+      if (!response.ok) {
+        throw new Error(`Erreur ${response.status}: ${response.statusText}`)
+      }
+      const isEmptyZip = response.headers.get('x-empty-zip') === 'true'
+      if (isEmptyZip) {
+        toast.info("Aucun contenu à exporter: ZIP vide.", {
+          duration: 4000,
+          style: { background: 'white', color: '#3b82f6', border: '1px solid #3b82f6', fontWeight: 'bold' }
+        })
+        return
+      }
+
+      const contentDisposition = response.headers.get('content-disposition') || ''
+      const fileNameMatch = /filename\*=UTF-8''([^;]+)|filename="?([^";]+)"?/i.exec(contentDisposition || '')
+      const fileName = decodeURIComponent((fileNameMatch?.[1] || fileNameMatch?.[2] || '').trim()) || `demande-${params.id}.zip`
+
+      const blob = await response.blob()
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = fileName
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      window.URL.revokeObjectURL(url)
+      toast.success(`Export ZIP lancé (${fileName})`)
+    } catch (error) {
+      console.error('Erreur lors de l\'export ZIP:', error)
+      toast.error("Erreur lors de l'export ZIP", {
         duration: 4000,
         style: {
           background: 'white',
@@ -636,6 +687,7 @@ export default function DetailDemande() {
               onShowRejectDialogChange={setShowRejectDialog}
               onShowMoreInfoDialogChange={setShowMoreInfoDialog}
               onExport={handleExportPDF}
+              onExportZip={handleExportZip}
               onValidateAndSubmit={handleValidateAndSubmit}
             />
           </div>
@@ -710,7 +762,6 @@ export default function DetailDemande() {
 
           {/* 4ème partie : Documents joints */}
           <FilesSection
-            demande={demande}
             modeEdition={modeEdition}
             watch={watch}
             fichierASupprimer={fichierASupprimer}

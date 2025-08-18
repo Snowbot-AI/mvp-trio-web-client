@@ -110,7 +110,7 @@ export async function GET(_req: NextRequest, ctx: { params: Promise<{ id: string
 
         if (upstream.status < 200 || upstream.status >= 300) {
             let details: unknown = upstream.bodyText
-            try { details = JSON.parse(upstream.bodyText) } catch { /* ignore */ }
+            try { details = JSON.parse(upstream.bodyText) } catch (e) { console.warn('[API demandes/:id GET] Failed to parse upstream error body', e) }
             const status = upstream.status === 404 ? 404 : 502
             return NextResponse.json({ error: 'upstream', status: upstream.status, details }, { status })
         }
@@ -119,6 +119,7 @@ export async function GET(_req: NextRequest, ctx: { params: Promise<{ id: string
         return NextResponse.json(json, { status: 200 })
     } catch (error) {
         const message = error instanceof Error ? error.message : 'Unknown error'
+        console.error('[API] Proxy error GET /api/demandes/:id', { message })
         return NextResponse.json({ error: 'proxy_error', message }, { status: 500 })
     }
 }
@@ -198,7 +199,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 
         if (upstream.status < 200 || upstream.status >= 300) {
             let details: unknown = upstream.bodyText
-            try { details = JSON.parse(upstream.bodyText) } catch { /* ignore */ }
+            try { details = JSON.parse(upstream.bodyText) } catch (e) { console.warn('[API demandes/:id PUT] Failed to parse upstream error body', e) }
             return NextResponse.json({ error: 'upstream', details }, { status: 502 })
         }
 
@@ -206,6 +207,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
         return NextResponse.json(updated, { status: 200 })
     } catch (error) {
         const message = error instanceof Error ? error.message : 'Unknown error'
+        console.error('[API] Proxy error PUT /api/demandes/:id', { message })
         return NextResponse.json({ error: 'proxy_error', message }, { status: 500 })
     }
 }

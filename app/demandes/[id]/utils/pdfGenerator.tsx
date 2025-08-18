@@ -278,7 +278,7 @@ const formatAmount = (amount: number): string => {
     return normalizeFrenchSpaces(formatted)
 }
 // Fonction pour générer le numéro de demande
-const generateRequestNumber = (demande: DemandeFormData) => {
+export const generateRequestNumber = (demande: DemandeFormData) => {
     const date = new Date(demande.date)
     const year = date.getFullYear()
     const month = String(date.getMonth() + 1).padStart(2, '0')
@@ -298,7 +298,7 @@ const generateRequestNumber = (demande: DemandeFormData) => {
 
 
 // Composant principal du PDF - Format professionnel
-export const DemandePDF = ({ demande }: { demande: DemandeFormData }) => (
+export const DemandePDF = ({ demande, logoSrc }: { demande: DemandeFormData; logoSrc?: string }) => (
     <Document>
         <Page size="A4" style={styles.page}>
             {/* En-tête avec logo, titre et infos page */}
@@ -308,7 +308,7 @@ export const DemandePDF = ({ demande }: { demande: DemandeFormData }) => (
                     {/* eslint-disable-next-line jsx-a11y/alt-text */}
                     <Image
                         style={styles.logoImage}
-                        src="/logoTrio.png"
+                        src={logoSrc || "/logoTrio.png"}
                     />
                 </View>
 

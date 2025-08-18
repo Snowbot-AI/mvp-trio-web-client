@@ -15,7 +15,6 @@ type FileType = {
 }
 
 interface FilesSectionProps {
-    demande: DemandeFormData
     modeEdition: boolean
     watch: UseFormWatch<DemandeFormData>
     fichierASupprimer: { id: string; name: string } | null
@@ -26,7 +25,6 @@ interface FilesSectionProps {
 }
 
 export function FilesSection({
-    demande,
     modeEdition,
     watch,
     fichierASupprimer,
@@ -96,7 +94,7 @@ export function FilesSection({
                                                 Télécharger
                                             </Button>
                                         )}
-                                        {(modeEdition || demande.status === PurchaseRequestStatus.VALIDEE) && (
+                                        {(modeEdition && watch("status") !== PurchaseRequestStatus.VALIDEE) && (
                                             <Button
                                                 size="sm"
                                                 variant="destructive"

@@ -118,7 +118,7 @@ export async function GET(_req: NextRequest, ctx: { params: Promise<{ id: string
 
         if (upstream.status < 200 || upstream.status >= 300) {
             let details: unknown
-            try { details = JSON.parse(upstream.bodyBuffer.toString('utf8')) } catch { details = 'Failed to download file' }
+            try { details = JSON.parse(upstream.bodyBuffer.toString('utf8')) } catch (e) { console.warn('[Files] Failed to parse upstream error body as JSON', e); details = 'Failed to download file' }
             const status = upstream.status === 404 ? 404 : 502
             return NextResponse.json({ error: 'upstream', status: upstream.status, details }, { status })
         }
@@ -138,6 +138,7 @@ export async function GET(_req: NextRequest, ctx: { params: Promise<{ id: string
         return new NextResponse(upstream.bodyBuffer, { status: 200, headers })
     } catch (error) {
         const message = error instanceof Error ? error.message : 'Unknown error'
+        console.error('[Files] Proxy error GET /api/files/:id', { message })
         return NextResponse.json({ error: 'proxy_error', message }, { status: 500 })
     }
 }
