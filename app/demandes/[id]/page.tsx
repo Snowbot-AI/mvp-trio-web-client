@@ -402,6 +402,15 @@ export default function DetailDemande() {
       const currentFiles = watch("files") || []
       const updatedFiles = [...currentFiles, ...nouveauxFichiersMetadata]
       setValue('files', updatedFiles)
+
+      // Auto-save when demande is validated and adding invoices without edit mode
+      const currentStatus = watch("status")
+      if (category === 'invoices' && currentStatus === PurchaseRequestStatus.VALIDEE) {
+        const currentData = watch()
+        const dataForSave: DemandeFormData = { ...(currentData as DemandeFormData), files: updatedFiles }
+        const allFilesToUpload = [...filesToUpload, ...nouveauxFichiers]
+        gererSauvegarde(dataForSave, allFilesToUpload)
+      }
     }
   }
 
@@ -421,6 +430,15 @@ export default function DetailDemande() {
 
       // Supprimer des fichiers à uploader si c'est un nouveau fichier
       setFilesToUpload(prev => prev.filter(file => file.name !== fichierASupprimer.name))
+
+      // Si on est en statut VALIDEE et qu'on supprime une facture, auto-sauvegarder
+      const currentStatus = watch("status")
+      const deletedWasInvoice = currentFiles.some((f: FileType) => (f.id === fichierASupprimer.id || f.name === fichierASupprimer.name) && f.category === 'invoices')
+      if (currentStatus === PurchaseRequestStatus.VALIDEE && deletedWasInvoice) {
+        const currentData = watch()
+        const dataForSave: DemandeFormData = { ...(currentData as DemandeFormData), files: updatedFiles }
+        gererSauvegarde(dataForSave, filesToUpload)
+      }
 
       setFichierASupprimer(null)
     }

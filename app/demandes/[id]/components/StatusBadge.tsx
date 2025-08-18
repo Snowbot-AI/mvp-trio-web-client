@@ -1,5 +1,5 @@
 import { Badge } from "@/components/ui/badge"
-import { CheckCircle, XCircle, Clock, Edit, FileText } from "lucide-react"
+import { CheckCircle, XCircle, Clock, Edit, FileText, Download } from "lucide-react"
 import { PurchaseRequestStatus } from "../../types"
 
 interface StatusBadgeProps {
@@ -19,6 +19,10 @@ export function StatusBadge({ status }: StatusBadgeProps) {
                 return "Validée"
             case PurchaseRequestStatus.REJETEE:
                 return "Rejetée"
+            case PurchaseRequestStatus.SUIVI_COMPTA:
+                return "Suivi compta"
+            case PurchaseRequestStatus.EXPORTEE:
+                return "Exportée"
             default:
                 return statut
         }
@@ -34,6 +38,10 @@ export function StatusBadge({ status }: StatusBadgeProps) {
                 return <Clock className="h-4 w-4 text-blue-600" />
             case PurchaseRequestStatus.A_MODIFIER:
                 return <Edit className="h-4 w-4 text-orange-600" />
+            case PurchaseRequestStatus.SUIVI_COMPTA:
+                return <Clock className="h-4 w-4 text-purple-600" />
+            case PurchaseRequestStatus.EXPORTEE:
+                return <Download className="h-4 w-4 text-indigo-600" />
             case PurchaseRequestStatus.BROUILLON:
             default:
                 return <FileText className="h-4 w-4 text-gray-600" />
@@ -50,6 +58,10 @@ export function StatusBadge({ status }: StatusBadgeProps) {
                 return "bg-blue-100 text-blue-800 border-blue-200"
             case PurchaseRequestStatus.A_MODIFIER:
                 return "bg-orange-100 text-orange-800 border-orange-200"
+            case PurchaseRequestStatus.SUIVI_COMPTA:
+                return "bg-purple-100 text-purple-800 border-purple-200"
+            case PurchaseRequestStatus.EXPORTEE:
+                return "bg-indigo-100 text-indigo-800 border-indigo-200"
             case PurchaseRequestStatus.BROUILLON:
             default:
                 return "bg-gray-100 text-gray-800 border-gray-200"

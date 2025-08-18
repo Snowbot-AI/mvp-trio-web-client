@@ -130,6 +130,12 @@ export enum PurchaseRequestStatus {
 
   /** The request has been rejected following a review. */
   REJETEE = "REJETEE",
+
+  /** The request has been validated by the director and is waiting for the comptable to validate it. */
+  SUIVI_COMPTA = "SUIVI_COMPTA",
+
+  /** The request has been exported to the comptable. */
+  EXPORTEE = "EXPORTEE",
 }
 
 export enum ItemType {

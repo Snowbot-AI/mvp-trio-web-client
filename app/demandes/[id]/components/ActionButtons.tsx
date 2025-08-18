@@ -263,18 +263,35 @@ export function ActionButtons({
             {/* Bouton Modifier - caché pour les statuts finaux */}
             {demande.status !== PurchaseRequestStatus.A_VERIFIER &&
                 demande.status !== PurchaseRequestStatus.VALIDEE &&
-                demande.status !== PurchaseRequestStatus.REJETEE && (
+                demande.status !== PurchaseRequestStatus.REJETEE &&
+                demande.status !== PurchaseRequestStatus.SUIVI_COMPTA &&
+                demande.status !== PurchaseRequestStatus.EXPORTEE && (
                     <Button onClick={onEdit}>
                         <Edit className="h-4 w-4 mr-2" />
                         Modifier
                     </Button>
                 )}
 
-            {/* Bouton Exporter - visible seulement pour les statuts finaux */}
-            {(demande.status === PurchaseRequestStatus.VALIDEE || demande.status === PurchaseRequestStatus.REJETEE) && (
+            {/* Bouton Exporter PDF - visible en SUIVI_COMPTA et REJETEE */}
+            {(demande.status === PurchaseRequestStatus.SUIVI_COMPTA || demande.status === PurchaseRequestStatus.REJETEE) && (
                 <Button variant="outline" onClick={onExport}>
                     <Download className="h-4 w-4 mr-2" />
                     Exporter PDF
+                </Button>
+            )}
+
+            {/* Bouton passer en Suivi Compta quand Validée */}
+            {demande.status === PurchaseRequestStatus.VALIDEE && (
+                <Button className="bg-purple-600 hover:bg-purple-700" onClick={() => onStatusChange(PurchaseRequestStatus.SUIVI_COMPTA)}>
+                    <Clock className="h-4 w-4 mr-2" />
+                    Passer en Suivi compta
+                </Button>
+            )}
+
+            {/* Bouton marquer comme Exportée quand en Suivi Compta */}
+            {demande.status === PurchaseRequestStatus.SUIVI_COMPTA && (
+                <Button className="bg-indigo-600 hover:bg-indigo-700" onClick={() => onStatusChange(PurchaseRequestStatus.EXPORTEE)}>
+                    Marquer comme exportée
                 </Button>
             )}
 

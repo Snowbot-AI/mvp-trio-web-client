@@ -18,7 +18,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
-import { Search, CheckCircle, XCircle, Clock, Plus, Loader2, FileText, Edit } from "lucide-react"
+import { Search, CheckCircle, XCircle, Clock, Plus, Loader2, FileText, Edit, Download } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { getStationName, PurchaseRequestStatus, CodeStation } from "./types"
 import { useDemandes, useCreateDemande } from "./hooks"
@@ -34,6 +34,10 @@ const getIconeStatut = (statut: PurchaseRequestStatus) => {
       return <Clock className="h-4 w-4 text-blue-600" />
     case PurchaseRequestStatus.A_MODIFIER:
       return <Edit className="h-4 w-4 text-orange-600" />
+    case PurchaseRequestStatus.SUIVI_COMPTA:
+      return <Clock className="h-4 w-4 text-purple-600" />
+    case PurchaseRequestStatus.EXPORTEE:
+      return <Download className="h-4 w-4 text-indigo-600" />
     case PurchaseRequestStatus.BROUILLON:
     default:
       return <FileText className="h-4 w-4 text-gray-600" />
@@ -50,6 +54,10 @@ const getCouleurStatut = (statut: PurchaseRequestStatus) => {
       return "bg-blue-100 text-blue-800 border-blue-200"
     case PurchaseRequestStatus.A_MODIFIER:
       return "bg-orange-100 text-orange-800 border-orange-200"
+    case PurchaseRequestStatus.SUIVI_COMPTA:
+      return "bg-purple-100 text-purple-800 border-purple-200"
+    case PurchaseRequestStatus.EXPORTEE:
+      return "bg-indigo-100 text-indigo-800 border-indigo-200"
     case PurchaseRequestStatus.BROUILLON:
     default:
       return "bg-gray-100 text-gray-800 border-gray-200"
@@ -68,6 +76,10 @@ const getLibelleStatut = (statut: PurchaseRequestStatus) => {
       return "Validée"
     case PurchaseRequestStatus.REJETEE:
       return "Rejetée"
+    case PurchaseRequestStatus.SUIVI_COMPTA:
+      return "Suivi compta"
+    case PurchaseRequestStatus.EXPORTEE:
+      return "Exportée"
     default:
       return statut
   }
@@ -132,6 +144,8 @@ export default function DemandesPage() {
     [PurchaseRequestStatus.A_MODIFIER]: (demandes || []).filter((d: DemandeFormData) => d.status === PurchaseRequestStatus.A_MODIFIER).length,
     [PurchaseRequestStatus.VALIDEE]: (demandes || []).filter((d: DemandeFormData) => d.status === PurchaseRequestStatus.VALIDEE).length,
     [PurchaseRequestStatus.REJETEE]: (demandes || []).filter((d: DemandeFormData) => d.status === PurchaseRequestStatus.REJETEE).length,
+    [PurchaseRequestStatus.SUIVI_COMPTA]: (demandes || []).filter((d: DemandeFormData) => d.status === PurchaseRequestStatus.SUIVI_COMPTA).length,
+    [PurchaseRequestStatus.EXPORTEE]: (demandes || []).filter((d: DemandeFormData) => d.status === PurchaseRequestStatus.EXPORTEE).length,
   }
 
   const montantTotal = demandesFiltrees.reduce((somme: number, dem: DemandeFormData) => somme + (dem.total.total || 0), 0)
@@ -535,6 +549,8 @@ export default function DemandesPage() {
                   <SelectItem value={PurchaseRequestStatus.A_MODIFIER}>À modifier</SelectItem>
                   <SelectItem value={PurchaseRequestStatus.VALIDEE}>Validée</SelectItem>
                   <SelectItem value={PurchaseRequestStatus.REJETEE}>Rejetée</SelectItem>
+                  <SelectItem value={PurchaseRequestStatus.SUIVI_COMPTA}>Suivi compta</SelectItem>
+                  <SelectItem value={PurchaseRequestStatus.EXPORTEE}>Exportée</SelectItem>
                 </SelectContent>
               </Select>
               <Select value={filtreStation} onValueChange={setFiltreStation}>

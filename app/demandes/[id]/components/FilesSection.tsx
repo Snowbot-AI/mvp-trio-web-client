@@ -5,6 +5,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { FileText, Upload, Trash2 } from "lucide-react"
 import { UseFormWatch } from "react-hook-form"
 import { DemandeFormData } from "../../validation-schema"
+import { PurchaseRequestStatus } from "../../types"
 
 type FileType = {
     id?: string;
@@ -25,6 +26,7 @@ interface FilesSectionProps {
 }
 
 export function FilesSection({
+    demande,
     modeEdition,
     watch,
     fichierASupprimer,
@@ -94,7 +96,7 @@ export function FilesSection({
                                                 Télécharger
                                             </Button>
                                         )}
-                                        {modeEdition && (
+                                        {(modeEdition || demande.status === PurchaseRequestStatus.VALIDEE) && (
                                             <Button
                                                 size="sm"
                                                 variant="destructive"
@@ -123,7 +125,7 @@ export function FilesSection({
                         </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                        {modeEdition && (
+                        {(modeEdition || watch("status") === PurchaseRequestStatus.VALIDEE) && (
                             <div>
                                 <Label htmlFor="upload-invoices" className="text-sm font-medium">
                                     Ajouter des factures
@@ -165,7 +167,7 @@ export function FilesSection({
                                                 Télécharger
                                             </Button>
                                         )}
-                                        {modeEdition && (
+                                        {(modeEdition || watch("status") === PurchaseRequestStatus.VALIDEE) && (
                                             <Button
                                                 size="sm"
                                                 variant="destructive"
