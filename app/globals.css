@@ -116,7 +116,21 @@
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
     @apply bg-background text-foreground;
+  }
+
+  /* Remove number input spinners in WebKit (Chrome, Safari, Edge) */
+  input[type="number"]::-webkit-outer-spin-button,
+  input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  /* Remove number input spinners in Firefox and standardize */
+  input[type="number"] {
+    -moz-appearance: textfield;
+    appearance: textfield;
   }
 }

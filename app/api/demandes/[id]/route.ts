@@ -111,8 +111,8 @@ export async function GET(_req: NextRequest, ctx: { params: Promise<{ id: string
         if (upstream.status < 200 || upstream.status >= 300) {
             let details: unknown = upstream.bodyText
             try { details = JSON.parse(upstream.bodyText) } catch (e) { console.warn('[API demandes/:id GET] Failed to parse upstream error body', e) }
-            const status = upstream.status === 404 ? 404 : 502
-            return NextResponse.json({ error: 'upstream', status: upstream.status, details }, { status })
+            const status = upstream.status || 502
+            return NextResponse.json({ error: 'upstream', upstreamStatus: upstream.status, upstreamBody: upstream.bodyText, details }, { status })
         }
 
         const json: unknown = JSON.parse(upstream.bodyText)
@@ -200,7 +200,8 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
         if (upstream.status < 200 || upstream.status >= 300) {
             let details: unknown = upstream.bodyText
             try { details = JSON.parse(upstream.bodyText) } catch (e) { console.warn('[API demandes/:id PUT] Failed to parse upstream error body', e) }
-            return NextResponse.json({ error: 'upstream', details }, { status: 502 })
+            // Renvoyer le statut original de l'amont et inclure le corps brut également
+            return NextResponse.json({ error: 'upstream', upstreamStatus: upstream.status, upstreamBody: upstream.bodyText, details }, { status: upstream.status || 502 })
         }
 
         const updated: unknown = JSON.parse(upstream.bodyText)

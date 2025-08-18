@@ -11,7 +11,7 @@ import { toast } from "sonner"
 import { ArrowLeft } from "lucide-react"
 import { PurchaseRequestStatus } from "../types"
 import { getStationName } from "../types"
-import { useDemande, useUpdateDemandeWithJsonFile } from "../hooks"
+import { useDemande, useUpdateDemandeWithJsonFile, ApiError } from "../hooks"
 import { buildApiUrl, API_CONFIG } from "@/lib/api-config"
 import { DemandeSchema, type DemandeFormData } from "../validation-schema"
 import { translateFieldPath } from "../utils"
@@ -120,7 +120,8 @@ export default function DetailDemande() {
 
   // Handlers
   const gererSauvegarde = (data: DemandeFormData, files?: File[]) => {
-    updateDemandeWithJsonFileMutation.mutate({ requests: data, files: files || [] }, {
+    const payload: DemandeFormData = { ...data, id: demande?.id ?? data.id }
+    updateDemandeWithJsonFileMutation.mutate({ requests: payload, files: files || [] }, {
       onSuccess: () => {
         setModeEdition(false)
         setAjoutArticle(false)
@@ -128,8 +129,59 @@ export default function DetailDemande() {
         toast.success("Sauvegarde réussie !")
       },
       onError: (error) => {
-        console.error("Erreur lors de la sauvegarde:", error)
-        toast.error(error.message || "Erreur lors de la sauvegarde de la demande", {
+        // Logger l'erreur détaillée en console
+        if (error instanceof ApiError) {
+           
+          console.error('[Save Error] status:', error.status, 'message:', error.message, 'details:', error.details)
+          // Extra: tenter d'extraire les sous-détails courants
+          const d = error.details as unknown
+          if (d && typeof d === 'object') {
+            const obj = d as Record<string, unknown>
+            if (obj.details) {
+               
+              console.error('[Save Error] nested details:', obj.details)
+            }
+          }
+        } else {
+           
+          console.error('[Save Error] unknown:', error)
+        }
+
+        // Construire un message plus explicite pour l'utilisateur
+        let userMessage = 'Erreur lors de la sauvegarde de la demande'
+        if (error instanceof ApiError) {
+          const statusPart = error.status ? ` (HTTP ${error.status})` : ''
+          const backendMsg = (() => {
+            const d = error.details as unknown
+            if (d && typeof d === 'object') {
+              const obj = d as Record<string, unknown>
+              if (typeof obj.error === 'string') {
+                return `: ${obj.error}`
+              }
+              if (typeof obj.message === 'string') {
+                return `: ${obj.message}`
+              }
+              if (typeof obj.details === 'object' && obj.details) {
+                const inner = obj.details as Record<string, unknown>
+                if (typeof inner.error === 'string') {
+                  return `: ${inner.error}`
+                }
+                if (typeof inner.message === 'string') {
+                  return `: ${inner.message}`
+                }
+              }
+            }
+            if (typeof d === 'string' && d.trim().length > 0) {
+              return `: ${d}`
+            }
+            return ''
+          })()
+          userMessage = `Sauvegarde refusée${statusPart}${backendMsg}`
+        } else if (error && typeof (error as { message?: unknown }).message === 'string') {
+          userMessage = (error as { message: string }).message
+        }
+
+        toast.error(userMessage, {
           duration: 4000,
           style: {
             background: 'white',
@@ -215,15 +267,40 @@ export default function DetailDemande() {
         }
       },
       onError: (error) => {
-        console.error("Erreur lors du changement de statut:", error)
-        toast.error(error.message || "Erreur lors du changement de statut", {
+        if (error instanceof ApiError) {
+           
+          console.error('[Status Change Error] status:', error.status, 'message:', error.message, 'details:', error.details)
+        } else {
+           
+          console.error('[Status Change Error] unknown:', error)
+        }
+
+        let userMessage = 'Erreur lors du changement de statut'
+        if (error instanceof ApiError) {
+          const statusPart = error.status ? ` (HTTP ${error.status})` : ''
+          const backendMsg = (() => {
+            const d = error.details as unknown
+            if (d && typeof d === 'object') {
+              const obj = d as Record<string, unknown>
+              if (typeof obj.error === 'string') return `: ${obj.error}`
+              if (typeof obj.message === 'string') return `: ${obj.message}`
+              if (typeof obj.details === 'object' && obj.details) {
+                const inner = obj.details as Record<string, unknown>
+                if (typeof inner.error === 'string') return `: ${inner.error}`
+                if (typeof inner.message === 'string') return `: ${inner.message}`
+              }
+            }
+            if (typeof d === 'string' && d.trim().length > 0) return `: ${d}`
+            return ''
+          })()
+          userMessage = `Changement de statut refusé${statusPart}${backendMsg}`
+        } else if (error && typeof (error as { message?: unknown }).message === 'string') {
+          userMessage = (error as { message: string }).message
+        }
+
+        toast.error(userMessage, {
           duration: 4000,
-          style: {
-            background: 'white',
-            color: '#ef4444',
-            fontWeight: 'bold',
-            border: '1px solid #ef4444'
-          }
+          style: { background: 'white', color: '#ef4444', fontWeight: 'bold', border: '1px solid #ef4444' }
         })
       }
     })
@@ -276,15 +353,40 @@ export default function DetailDemande() {
         toast.success("Demande soumise avec succès !")
       },
       onError: (error) => {
-        console.error("Erreur lors de la soumission:", error)
-        toast.error(error.message || "Erreur lors de la soumission", {
+        if (error instanceof ApiError) {
+           
+          console.error('[Submit Error] status:', error.status, 'message:', error.message, 'details:', error.details)
+        } else {
+           
+          console.error('[Submit Error] unknown:', error)
+        }
+
+        let userMessage = "Erreur lors de la soumission"
+        if (error instanceof ApiError) {
+          const statusPart = error.status ? ` (HTTP ${error.status})` : ''
+          const backendMsg = (() => {
+            const d = error.details as unknown
+            if (d && typeof d === 'object') {
+              const obj = d as Record<string, unknown>
+              if (typeof obj.error === 'string') return `: ${obj.error}`
+              if (typeof obj.message === 'string') return `: ${obj.message}`
+              if (typeof obj.details === 'object' && obj.details) {
+                const inner = obj.details as Record<string, unknown>
+                if (typeof inner.error === 'string') return `: ${inner.error}`
+                if (typeof inner.message === 'string') return `: ${inner.message}`
+              }
+            }
+            if (typeof d === 'string' && d.trim().length > 0) return `: ${d}`
+            return ''
+          })()
+          userMessage = `Soumission refusée${statusPart}${backendMsg}`
+        } else if (error && typeof (error as { message?: unknown }).message === 'string') {
+          userMessage = (error as { message: string }).message
+        }
+
+        toast.error(userMessage, {
           duration: 4000,
-          style: {
-            background: 'white',
-            color: '#ef4444',
-            fontWeight: 'bold',
-            border: '1px solid #ef4444'
-          }
+          style: { background: 'white', color: '#ef4444', fontWeight: 'bold', border: '1px solid #ef4444' }
         })
       }
     })

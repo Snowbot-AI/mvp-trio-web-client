@@ -117,7 +117,7 @@ export function ContactInfoCards({
                                     className={`mt-1 ${validationErrors.provider?.name ? 'border-red-500' : ''}`}
                                 />
                             ) : (
-                                <p className="mt-1 font-medium">{demande.provider.name}</p>
+                                <p className="mt-1 font-medium">{demande.provider?.name}</p>
                             )}
                             {validationErrors.provider?.name && (
                                 <p className="text-red-500 text-sm mt-1">{validationErrors.provider.name.message}</p>
@@ -134,7 +134,7 @@ export function ContactInfoCards({
                                 className={`mt-1 ${validationErrors.provider?.address ? 'border-red-500' : ''}`}
                             />
                         ) : (
-                            <p className="mt-1">{demande.provider.address}</p>
+                            <p className="mt-1">{demande.provider?.address}</p>
                         )}
                         {validationErrors.provider?.address && (
                             <p className="text-red-500 text-sm mt-1">{validationErrors.provider.address.message}</p>
@@ -150,7 +150,7 @@ export function ContactInfoCards({
                                 className={`mt-1 ${validationErrors.provider?.email ? 'border-red-500' : ''}`}
                             />
                         ) : (
-                            <p className="mt-1">{demande.provider.email || "Non spécifié"}</p>
+                            <p className="mt-1">{demande.provider?.email || "Non spécifié"}</p>
                         )}
                         {validationErrors.provider?.email && (
                             <p className="text-red-500 text-sm mt-1">{validationErrors.provider.email.message}</p>
@@ -166,7 +166,7 @@ export function ContactInfoCards({
                                 className={`mt-1 ${validationErrors.provider?.tel ? 'border-red-500' : ''}`}
                             />
                         ) : (
-                            <p className="mt-1">{demande.provider.tel || "Non spécifié"}</p>
+                            <p className="mt-1">{demande.provider?.tel || "Non spécifié"}</p>
                         )}
                         {validationErrors.provider?.tel && (
                             <p className="text-red-500 text-sm mt-1">{validationErrors.provider.tel.message}</p>

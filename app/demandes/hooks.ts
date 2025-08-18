@@ -2,6 +2,19 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { DemandeFormData } from './validation-schema';
 import { buildApiUrl, API_CONFIG } from '../../lib/api-config';
 
+// Erreur API enrichie pour propager le statut et les détails en cas d'échec
+export class ApiError extends Error {
+  public readonly status: number;
+  public readonly details: unknown;
+
+  constructor(message: string, status: number, details?: unknown) {
+    super(message);
+    this.name = 'ApiError';
+    this.status = status;
+    this.details = details;
+  }
+}
+
 // Fonction utilitaire pour créer les headers de base (sans auth, on passe par cookie)
 const createHeaders = (contentType?: string) => {
   const headers: Record<string, string> = {};
@@ -101,7 +114,19 @@ const updateDemande = async (formData: FormData): Promise<DemandeFormData> => {
     body: formData,
   });
   if (!response.ok) {
-    throw new Error(`${response.status} ${response.statusText}`);
+    let errorBody: unknown;
+    try {
+      errorBody = await response.json();
+    } catch {
+      errorBody = await response.text();
+    }
+    // Log détaillé en console
+     
+    console.error('[updateDemande] Error response', { status: response.status, statusText: response.statusText, body: errorBody });
+    const message = typeof errorBody === 'object' && errorBody && 'error' in (errorBody as Record<string, unknown>)
+      ? String((errorBody as { error?: unknown }).error)
+      : `${response.status} ${response.statusText}`;
+    throw new ApiError(message, response.status, errorBody);
   }
   return response.json();
 };
@@ -131,9 +156,19 @@ const updateDemandeWithJsonFile = async (input: { requests: DemandeFormData, fil
   });
 
   if (!response.ok) {
-    // Récupérer le message d'erreur de la réponse JSON
-    const errorData = await response.json()
-    throw new Error(errorData.error || `${response.status} ${response.statusText}`)
+    let errorBody: unknown;
+    try {
+      errorBody = await response.json();
+    } catch {
+      errorBody = await response.text();
+    }
+    // Log détaillé en console
+     
+    console.error('[updateDemandeWithJsonFile] Error response', { status: response.status, statusText: response.statusText, body: errorBody });
+    const message = typeof errorBody === 'object' && errorBody && 'error' in (errorBody as Record<string, unknown>)
+      ? String((errorBody as { error?: unknown }).error)
+      : `${response.status} ${response.statusText}`;
+    throw new ApiError(message, response.status, errorBody);
   }
 
   return response.json();
@@ -163,9 +198,19 @@ const createDemande = async (input: { requests: Partial<DemandeFormData>, files?
   });
 
   if (!response.ok) {
-    // Récupérer le message d'erreur de la réponse JSON
-    const errorData = await response.json()
-    throw new Error(errorData.error || `${response.status} ${response.statusText}`)
+    let errorBody: unknown;
+    try {
+      errorBody = await response.json();
+    } catch {
+      errorBody = await response.text();
+    }
+    // Log détaillé en console
+     
+    console.error('[createDemande] Error response', { status: response.status, statusText: response.statusText, body: errorBody });
+    const message = typeof errorBody === 'object' && errorBody && 'error' in (errorBody as Record<string, unknown>)
+      ? String((errorBody as { error?: unknown }).error)
+      : `${response.status} ${response.statusText}`;
+    throw new ApiError(message, response.status, errorBody);
   }
 
   return response.json();
