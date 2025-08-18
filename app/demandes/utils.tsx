@@ -69,3 +69,103 @@ export const getLibellePriorite = (priorite: string) => {
       return priorite
   }
 }
+
+// Traduction des chemins de champs (ex: items.0.description -> articles > [1] > désignation)
+export const translateFieldPath = (segments: Array<string | number>): string => {
+  if (!Array.isArray(segments) || segments.length === 0) {
+    return "champ"
+  }
+
+  const rootTranslations: Record<string, string> = {
+    from: "demandeur",
+    description: "description",
+    date: "date",
+    deliveryDate: "date de livraison",
+    priority: "priorité",
+    status: "statut",
+    codeStation: "station",
+    comment: "commentaire",
+    files: "fichiers",
+    items: "articles",
+    billing: "facturation",
+    provider: "fournisseur",
+    delivery: "livraison",
+    total: "totaux",
+    signatureDemandeur: "signature du demandeur",
+    validationResponsable: "validation du responsable",
+  }
+
+  const nestedTranslations: Record<string, Record<string, string>> = {
+    items: {
+      description: "désignation",
+      service: "service",
+      budgetType: "type de budget",
+      itemType: "type d'article",
+      referenceDevis: "référence devis",
+      quantity: "quantité",
+      unitPrice: "prix unitaire",
+      price: "montant",
+    },
+    billing: {
+      name: "nom de facturation",
+      siret: "SIRET",
+      address: "adresse de facturation",
+      emails: "email de facturation",
+      comment: "commentaire de facturation",
+    },
+    provider: {
+      name: "nom du fournisseur",
+      address: "adresse du fournisseur",
+      email: "email du fournisseur",
+      tel: "téléphone du fournisseur",
+    },
+    delivery: {
+      address: "adresse de livraison",
+      tel: "téléphone de livraison",
+      comment: "commentaire de livraison",
+    },
+    total: {
+      orderTotal: "total commande HT",
+      deliveryTotal: "participation livraison",
+      billingFees: "frais de facturation",
+      participationLivraison: "participation livraison",
+      fraisFacturation: "frais de facturation",
+      other: "autres frais",
+      total: "total HT",
+    },
+  }
+
+  const parts: string[] = []
+  let lastContainer: string | null = null
+
+  for (let i = 0; i < segments.length; i += 1) {
+    const raw = segments[i]
+    const seg = typeof raw === 'number' || /^\d+$/.test(String(raw)) ? Number(raw) : String(raw)
+
+    if (typeof seg === 'number') {
+      // Indice de tableau -> format [n] en 1-based
+      parts.push(`[${seg + 1}]`)
+      continue
+    }
+
+    const isContainer = ["items", "billing", "provider", "delivery", "total"].includes(seg)
+    const translatedRoot = rootTranslations[seg] || seg
+
+    if (isContainer) {
+      parts.push(translatedRoot)
+      lastContainer = seg
+      continue
+    }
+
+    if (lastContainer && nestedTranslations[lastContainer] && nestedTranslations[lastContainer][seg]) {
+      parts.push(nestedTranslations[lastContainer][seg])
+    } else if (rootTranslations[seg]) {
+      parts.push(rootTranslations[seg])
+    } else {
+      // fallback: remplacer camelCase par mots séparés
+      parts.push(seg.replace(/([a-z])([A-Z])/g, '$1 $2').toLowerCase())
+    }
+  }
+
+  return parts.join(' > ')
+}

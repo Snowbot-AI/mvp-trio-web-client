@@ -14,6 +14,7 @@ import { getStationName } from "../types"
 import { useDemande, useUpdateDemandeWithJsonFile } from "../hooks"
 import { buildApiUrl, API_CONFIG } from "@/lib/api-config"
 import { DemandeSchema, type DemandeFormData } from "../validation-schema"
+import { translateFieldPath } from "../utils"
 
 type FileType = {
   id?: string;
@@ -238,9 +239,9 @@ export default function DetailDemande() {
     if (!validationResult.success) {
       // Afficher les erreurs de validation dans un toast
       const errorMessages = validationResult.error.issues.map((issue) => {
-        const fieldName = issue.path?.join('.') || '(champ inconnu)';
-        return `${fieldName}: ${issue.message}`;
-      });
+        const fieldName = translateFieldPath((issue.path || []) as Array<string | number>) || '(champ inconnu)'
+        return `${fieldName}: ${issue.message}`
+      })
 
       toast.error(
         <div>
@@ -544,7 +545,7 @@ export default function DetailDemande() {
     gererSauvegarde(dataSanitized, filesToUpload)
   }, (errors) => {
     // Extraire récursivement des messages détaillés (items[index].champ)
-    const flattenErrors = (err: unknown, path: string[] = []): string[] => {
+    const flattenErrors = (err: unknown, path: Array<string | number> = []): string[] => {
       const messages: string[] = []
       if (!err) {
         return messages
@@ -552,7 +553,7 @@ export default function DetailDemande() {
 
       if (Array.isArray(err)) {
         err.forEach((item, idx) => {
-          messages.push(...flattenErrors(item as unknown, [...path, String(idx)]))
+          messages.push(...flattenErrors(item as unknown, [...path, idx]))
         })
         return messages
       }
@@ -560,7 +561,7 @@ export default function DetailDemande() {
       if (typeof err === 'object') {
         const obj = err as Record<string, unknown>
         if ('message' in obj && typeof (obj as { message?: unknown }).message === 'string') {
-          messages.push(`${path.join('.')} : ${(obj as { message: string }).message}`)
+          messages.push(`${translateFieldPath(path)} : ${(obj as { message: string }).message}`)
           return messages
         }
         Object.keys(obj).forEach((key) => {
