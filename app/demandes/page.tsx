@@ -6,7 +6,6 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import {
@@ -96,17 +95,10 @@ export default function DemandesPage() {
     from: "LAUBRAY",
     codeStation: CodeStation.CODE_06 as CodeStation,
     description: "",
-    deliveryDate: "",
-    deliveryAddress: getStationName(CodeStation.CODE_06),
-    providerName: "",
-    providerAddress: "",
   })
   const [fichiersDevis, setFichiersDevis] = useState<File[]>([])
 
-  const getDefaultDeliveryAddressForStation = (codeStation: CodeStation): string => {
-    // Par défaut, on préremplit avec le nom de la station sélectionnée
-    return getStationName(codeStation)
-  }
+
 
   const router = useRouter()
 
@@ -160,24 +152,15 @@ export default function DemandesPage() {
         codeStation: nouvelleDemande.codeStation,
         description: nouvelleDemande.description || "",
         date: new Date().toISOString(),
-        deliveryDate: nouvelleDemande.deliveryDate || undefined,
         priority: "LOW",
         status: PurchaseRequestStatus.BROUILLON,
         items: [], // Sera rempli plus tard
-        billing: {
-          name: "",
-          siret: "", // Valeur par défaut
-          address: "",
-          emails: [],
-        },
-        provider: {
-          name: nouvelleDemande.providerName || "",
-          address: nouvelleDemande.providerAddress || "",
-        },
-        delivery: {
-          address: nouvelleDemande.deliveryAddress || "",
-          tel: "",
-        },
+        // billing: {
+        //   name: "",
+        //   siret: "", // Valeur par défaut
+        //   address: "",
+        //   emails: [],
+        // },
         total: {
           orderTotal: 0,
           total: 0,
@@ -200,10 +183,6 @@ export default function DemandesPage() {
         from: "LAUBRAY",
         codeStation: CodeStation.CODE_06 as CodeStation,
         description: "",
-        deliveryDate: "",
-        deliveryAddress: getStationName(CodeStation.CODE_06),
-        providerName: "",
-        providerAddress: "",
       })
       setFichiersDevis([])
 
@@ -317,11 +296,6 @@ export default function DemandesPage() {
                         value={nouvelleDemande.codeStation}
                         onValueChange={(value: CodeStation) => {
                           gererChangementChamp("codeStation", value)
-                          // Préremplir l'adresse de livraison lors du choix de la station si vide
-                          setNouvelleDemande(prev => ({
-                            ...prev,
-                            deliveryAddress: prev.deliveryAddress || getDefaultDeliveryAddressForStation(value)
-                          }))
                         }}
                         required
                       >
@@ -330,7 +304,7 @@ export default function DemandesPage() {
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value={CodeStation.CODE_00}>Siège</SelectItem>
-                          <SelectItem value={CodeStation.CODE_06}>Cambre d&apos;Az</SelectItem>
+                          <SelectItem value={CodeStation.CODE_06}>Cambre d&apos;Aze</SelectItem>
                           <SelectItem value={CodeStation.CODE_07}>Porté-Puymorens</SelectItem>
                           <SelectItem value={CodeStation.CODE_08}>Formiguères</SelectItem>
                           <SelectItem value={CodeStation.CODE_999}>Restauration</SelectItem>
@@ -351,59 +325,7 @@ export default function DemandesPage() {
                       />
                     </div>
 
-                    <div className="md:col-span-1">
-                      <Label htmlFor="deliveryDate" className="text-sm font-medium">
-                        Date de livraison souhaitée
-                      </Label>
-                      <Input
-                        id="deliveryDate"
-                        type="date"
-                        value={nouvelleDemande.deliveryDate}
-                        onChange={(e) => gererChangementChamp("deliveryDate", e.target.value)}
-                        className="mt-1"
-                      />
-                    </div>
 
-                    <div className="md:col-span-2">
-                      <Label htmlFor="deliveryAddress" className="text-sm font-medium">
-                        Adresse de livraison
-                      </Label>
-                      <Textarea
-                        id="deliveryAddress"
-                        value={nouvelleDemande.deliveryAddress}
-                        onChange={(e) => gererChangementChamp("deliveryAddress", e.target.value)}
-                        placeholder="Adresse de livraison"
-                        className="mt-1"
-                        rows={2}
-                      />
-                    </div>
-
-                    <div className="md:col-span-1">
-                      <Label htmlFor="providerName" className="text-sm font-medium">
-                        Nom - Fournisseur
-                      </Label>
-                      <Input
-                        id="providerName"
-                        value={nouvelleDemande.providerName}
-                        onChange={(e) => gererChangementChamp("providerName", e.target.value)}
-                        placeholder="Nom du fournisseur"
-                        className="mt-1"
-                      />
-                    </div>
-
-                    <div className="md:col-span-1">
-                      <Label htmlFor="providerAddress" className="text-sm font-medium">
-                        Adresse - Fournisseur
-                      </Label>
-                      <Textarea
-                        id="providerAddress"
-                        value={nouvelleDemande.providerAddress}
-                        onChange={(e) => gererChangementChamp("providerAddress", e.target.value)}
-                        placeholder="Adresse du fournisseur"
-                        className="mt-1"
-                        rows={2}
-                      />
-                    </div>
 
                     <div className="md:col-span-2">
                       <Label htmlFor="devis" className="text-sm font-medium">
