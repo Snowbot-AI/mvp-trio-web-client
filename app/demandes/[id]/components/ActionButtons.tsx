@@ -305,6 +305,14 @@ export function ActionButtons({
                 </Button>
             )}
 
+            {/* Bouton revenir en Suivi Compta quand Exportée */}
+            {demande.status === PurchaseRequestStatus.EXPORTEE && (
+                <Button variant="outline" onClick={() => onStatusChange(PurchaseRequestStatus.SUIVI_COMPTA)}>
+                    <Clock className="h-4 w-4 mr-2" />
+                    Revenir en Suivi compta
+                </Button>
+            )}
+
             {(demande.status === PurchaseRequestStatus.BROUILLON || demande.status === PurchaseRequestStatus.A_MODIFIER) && (
                 <AlertDialog>
                     <AlertDialogTrigger asChild>
