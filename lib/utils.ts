@@ -15,7 +15,7 @@ export function formatPrice(amount: number, decimals: number = 2): string {
   return new Intl.NumberFormat('fr-FR', {
     style: 'currency',
     currency: 'EUR',
-    minimumFractionDigits: 0,
+    minimumFractionDigits: 2,
     maximumFractionDigits: decimals,
   }).format(amount)
 }
