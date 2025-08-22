@@ -292,10 +292,16 @@ export function ActionButtons({
 
             {/* Bouton passer en Suivi Compta quand Validée */}
             {demande.status === PurchaseRequestStatus.VALIDEE && (
-                <Button className="bg-purple-600 hover:bg-purple-700" onClick={() => onStatusChange(PurchaseRequestStatus.SUIVI_COMPTA)}>
-                    <Clock className="h-4 w-4 mr-2" />
-                    Passer en Suivi compta
-                </Button>
+                <>
+                    <Button variant="outline" onClick={onExport}>
+                        <Download className="h-4 w-4 mr-2" />
+                        Télécharger le PDF
+                    </Button>
+                    <Button className="bg-purple-600 hover:bg-purple-700" onClick={() => onStatusChange(PurchaseRequestStatus.SUIVI_COMPTA)}>
+                        <Clock className="h-4 w-4 mr-2" />
+                        Passer en Suivi compta
+                    </Button>
+                </>
             )}
 
             {/* Bouton marquer comme Exportée quand en Suivi Compta */}
