@@ -35,7 +35,7 @@ export default function Header() {
   }, [menuOpen])
 
   return (
-    <header className="bg-gray-100 border-b border-gray-200 shadow-sm">
+    <header className="bg-gray-100 border-b border-gray-200 shadow-sm relative z-[1000]">
       <div className="max-w-7xl mx-auto">
         <div className="flex justify-between items-center h-16">
           {/* Section gauche vide pour équilibrer */}
@@ -75,7 +75,7 @@ export default function Header() {
                   id="account-menu"
                   role="menu"
                   aria-label="Menu compte"
-                  className="absolute right-0 mt-2 w-48 rounded-md border bg-background shadow-lg focus:outline-hidden z-50"
+                  className="absolute right-0 mt-2 w-48 rounded-md border bg-background shadow-lg focus:outline-hidden z-[9999]"
                 >
                   <div className="py-1" role="none">
                     <Link

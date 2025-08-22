@@ -133,7 +133,7 @@ export function ActionButtons({
     }
 
     return (
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 justify-end">
             {/* Actions selon le statut */}
             {demande.status === PurchaseRequestStatus.A_VERIFIER && (
                 <div className="flex flex-wrap items-center gap-2">
