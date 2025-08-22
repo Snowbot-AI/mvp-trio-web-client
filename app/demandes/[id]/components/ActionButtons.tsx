@@ -262,11 +262,10 @@ export function ActionButtons({
                 </div>
             )}
 
-            {/* Bouton Modifier - caché pour les statuts finaux */}
+            {/* Bouton Modifier - caché pour certains statuts */}
             {demande.status !== PurchaseRequestStatus.A_VERIFIER &&
                 demande.status !== PurchaseRequestStatus.VALIDEE &&
                 demande.status !== PurchaseRequestStatus.REJETEE &&
-                demande.status !== PurchaseRequestStatus.SUIVI_COMPTA &&
                 demande.status !== PurchaseRequestStatus.EXPORTEE && (
                     <Button onClick={onEdit}>
                         <Edit className="h-4 w-4 mr-2" />
