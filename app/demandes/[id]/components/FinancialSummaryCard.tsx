@@ -73,7 +73,7 @@ export function FinancialSummaryCard({
                                 type="number"
                                 step="0.01"
                                 min="0"
-                                value={watchedDeliveryTotal ?? 0}
+                                value={Number(watchedDeliveryTotal ?? 0).toFixed(2)}
                                 onChange={handleDeliveryTotalChange}
                                 className="w-24 text-right"
                                 placeholder="0.00"
@@ -94,7 +94,7 @@ export function FinancialSummaryCard({
                                 type="number"
                                 step="0.01"
                                 min="0"
-                                value={watchedBillingFees ?? 0}
+                                value={Number(watchedBillingFees ?? 0).toFixed(2)}
                                 onChange={handleBillingFeesChange}
                                 className="w-24 text-right"
                                 placeholder="0.00"

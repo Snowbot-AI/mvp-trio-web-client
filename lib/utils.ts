@@ -11,12 +11,12 @@ export function cn(...inputs: ClassValue[]) {
  * @param decimals - Nombre de décimales (défaut: 2)
  * @returns Le prix formaté en français (ex: "1 234,56 €")
  */
-export function formatPrice(amount: number, decimals: number = 2): string {
+export function formatPrice(amount: number): string {
   return new Intl.NumberFormat('fr-FR', {
     style: 'currency',
     currency: 'EUR',
     minimumFractionDigits: 2,
-    maximumFractionDigits: decimals,
+    maximumFractionDigits: 2,
   }).format(amount)
 }
 
