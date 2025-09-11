@@ -285,7 +285,15 @@ export const generateRequestNumber = (demande: DemandeFormData) => {
     const day = String(date.getDate()).padStart(2, '0')
 
     // Utiliser le service du premier article ou un service par défaut
-    const serviceCode = demande.items?.map(item => item.service).toSorted().join('-') || ''
+    const serviceCode = Array.from(
+        new Set(
+            (demande.items ?? [])
+                .map(item => item.service)
+                .filter((s): s is string => Boolean(s))
+        )
+    )
+        .toSorted()
+        .join('-') || ''
 
     // Utiliser le nom du fournisseur ou un nom par défaut
     const providerName = demande.provider?.name || ''
