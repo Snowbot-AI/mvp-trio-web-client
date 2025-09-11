@@ -83,7 +83,7 @@ const TotalSchema = z.object({
 export const DemandeSchema = z.object({
   id: z.string().optional(),
   from: z.string().min(1, "Le demandeur est requis"),
-  description: z.string().optional().nullable(),
+  description: z.string().min(1, "La description est requise"),
   date: z.string(),
   // Accepter "", null, undefined → convertir "" en null pour rester optionnel/nullable
   deliveryDate: z.union([z.string(), z.null(), z.undefined()])

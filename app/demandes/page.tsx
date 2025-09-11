@@ -314,7 +314,7 @@ export default function DemandesPage() {
 
                     <div className="md:col-span-1">
                       <Label htmlFor="description" className="text-sm font-medium">
-                        Description
+                        Description *
                       </Label>
                       <Input
                         id="description"
@@ -322,6 +322,7 @@ export default function DemandesPage() {
                         onChange={(e) => gererChangementChamp("description", e.target.value)}
                         placeholder="Description de la demande..."
                         className="mt-1"
+                        required
                       />
                     </div>
 
@@ -358,7 +359,8 @@ export default function DemandesPage() {
                         disabled={
                           createDemandeMutation.isPending ||
                           !nouvelleDemande.from ||
-                          !nouvelleDemande.codeStation
+                          !nouvelleDemande.codeStation ||
+                          !nouvelleDemande.description
                         }
                       >
                         {createDemandeMutation.isPending ? (

@@ -35,13 +35,18 @@ export function GeneralInfoCard({
             </CardHeader>
             <CardContent className="space-y-4">
                 <div>
-                    <Label className="text-sm font-medium">Description</Label>
+                    <Label className="text-sm font-medium">Description *</Label>
                     {modeEdition ? (
-                        <Textarea
-                            {...register("description")}
-                            rows={3}
-                            className="mt-1"
-                        />
+                        <>
+                            <Textarea
+                                {...register("description", { required: "La description est requise" })}
+                                rows={3}
+                                className="mt-1"
+                            />
+                            {validationErrors?.description && (
+                                <p className="text-red-600 text-sm mt-1">{validationErrors.description.message as string}</p>
+                            )}
+                        </>
                     ) : (
                         <p className="text-gray-700 mt-1">{demande.description || "Aucune description"}</p>
                     )}
