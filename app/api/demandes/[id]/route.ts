@@ -212,3 +212,36 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
         return NextResponse.json({ error: 'proxy_error', message }, { status: 500 })
     }
 }
+
+// DELETE /api/demandes/[id]
+export async function DELETE(_req: NextRequest, ctx: { params: Promise<{ id: string }> }): Promise<NextResponse> {
+    try {
+        const { id } = await ctx.params
+
+        const upstream = await httpsRequest(`/api/demandes/${encodeURIComponent(id)}`, { method: 'DELETE' })
+
+        if (upstream.status < 200 || upstream.status >= 300) {
+            let details: unknown = upstream.bodyText
+            try { details = JSON.parse(upstream.bodyText) } catch (e) { console.warn('[API demandes/:id DELETE] Failed to parse upstream error body', e) }
+            const status = upstream.status || 502
+            return NextResponse.json({ error: 'upstream', upstreamStatus: upstream.status, upstreamBody: upstream.bodyText, details }, { status })
+        }
+
+        // Upstream may return 204 No Content
+        if (upstream.status === 204 || (upstream.bodyText || '').trim().length === 0) {
+            return new NextResponse(null, { status: 204 })
+        }
+
+        let json: unknown
+        try {
+            json = JSON.parse(upstream.bodyText)
+        } catch {
+            json = { success: true }
+        }
+        return NextResponse.json(json, { status: 200 })
+    } catch (error) {
+        const message = error instanceof Error ? error.message : 'Unknown error'
+        console.error('[API] Proxy error DELETE /api/demandes/:id', { message })
+        return NextResponse.json({ error: 'proxy_error', message }, { status: 500 })
+    }
+}

@@ -8,10 +8,10 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { Button } from "@/components/ui/button"
 import { Toaster } from "@/components/ui/sonner"
 import { toast } from "sonner"
-import { ArrowLeft } from "lucide-react"
+import { ArrowLeft, Trash2 } from "lucide-react"
 import { PurchaseRequestStatus } from "../types"
 import { getStationName } from "../types"
-import { useDemande, useUpdateDemandeWithJsonFile, ApiError } from "../hooks"
+import { useDemande, useUpdateDemandeWithJsonFile, useDeleteDemande, ApiError } from "../hooks"
 import { buildApiUrl, API_CONFIG } from "@/lib/api-config"
 import { DemandeSchema, type DemandeFormData } from "../validation-schema"
 import { translateFieldPath } from "../utils"
@@ -32,6 +32,7 @@ import { ItemsTable } from "./components/ItemsTable"
 import { ContactInfoCards } from "./components/ContactInfoCards"
 import { FilesSection } from "./components/FilesSection"
 import { PDFModal } from "./components/PDFModal"
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
 
 
 export default function DetailDemande() {
@@ -41,6 +42,7 @@ export default function DetailDemande() {
   // Utilisation de TanStack Query pour récupérer les vraies données
   const { data: demande, isLoading, error } = useDemande(params.id)
   const updateDemandeWithJsonFileMutation = useUpdateDemandeWithJsonFile()
+  const deleteDemandeMutation = useDeleteDemande()
 
   // États locaux
   const [modeEdition, setModeEdition] = useState(false)
@@ -48,6 +50,7 @@ export default function DetailDemande() {
   const [showRejectDialog, setShowRejectDialog] = useState(false)
   const [showMoreInfoDialog, setShowMoreInfoDialog] = useState(false)
   const [showPDFModal, setShowPDFModal] = useState(false)
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [rejectComment, setRejectComment] = useState("")
   const [moreInfoComment, setMoreInfoComment] = useState("")
   const [filesToUpload, setFilesToUpload] = useState<File[]>([])
@@ -131,19 +134,19 @@ export default function DetailDemande() {
       onError: (error) => {
         // Logger l'erreur détaillée en console
         if (error instanceof ApiError) {
-           
+
           console.error('[Save Error] status:', error.status, 'message:', error.message, 'details:', error.details)
           // Extra: tenter d'extraire les sous-détails courants
           const d = error.details as unknown
           if (d && typeof d === 'object') {
             const obj = d as Record<string, unknown>
             if (obj.details) {
-               
+
               console.error('[Save Error] nested details:', obj.details)
             }
           }
         } else {
-           
+
           console.error('[Save Error] unknown:', error)
         }
 
@@ -268,10 +271,10 @@ export default function DetailDemande() {
       },
       onError: (error) => {
         if (error instanceof ApiError) {
-           
+
           console.error('[Status Change Error] status:', error.status, 'message:', error.message, 'details:', error.details)
         } else {
-           
+
           console.error('[Status Change Error] unknown:', error)
         }
 
@@ -354,10 +357,10 @@ export default function DetailDemande() {
       },
       onError: (error) => {
         if (error instanceof ApiError) {
-           
+
           console.error('[Submit Error] status:', error.status, 'message:', error.message, 'details:', error.details)
         } else {
-           
+
           console.error('[Submit Error] unknown:', error)
         }
 
@@ -639,6 +642,31 @@ export default function DetailDemande() {
     }
   }
 
+  // Suppression de la demande
+  const handleDeleteDemande = () => {
+    const id = params.id
+    if (!id) return
+    deleteDemandeMutation.mutate(id, {
+      onSuccess: () => {
+        toast.success("Demande supprimée avec succès")
+        router.push("/")
+      },
+      onError: (error) => {
+        let userMessage = "Erreur lors de la suppression"
+        if (error instanceof ApiError) {
+          const statusPart = error.status ? ` (HTTP ${error.status})` : ''
+          userMessage = `Suppression refusée${statusPart}`
+        } else if (error && typeof (error as { message?: unknown }).message === 'string') {
+          userMessage = (error as { message: string }).message
+        }
+        toast.error(userMessage, {
+          duration: 4000,
+          style: { background: 'white', color: '#ef4444', fontWeight: 'bold', border: '1px solid #ef4444' }
+        })
+      }
+    })
+  }
+
   // Fonction wrapper pour la sauvegarde avec extraction des fichiers
   const handleSave = handleSubmit((data: DemandeFormData) => {
     // Sanitize: retirer les entrées falsy (ex: null) éventuellement présentes dans items
@@ -893,6 +921,34 @@ export default function DetailDemande() {
                 {demande.comment || "Aucun commentaire"}
               </p>
             )}
+          </div>
+
+          {/* 6ème partie : Zone dangereuse - suppression de la demande */}
+          <div className="bg-white rounded-lg shadow p-6 mb-8">
+            <h3 className="text-lg font-semibold mb-2 text-red-600">Zone dangereuse</h3>
+            <p className="text-sm text-gray-600 mb-4">La suppression est définitive et supprimera  cette demande d&apos;achat.</p>
+            <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive">
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  {deleteDemandeMutation.isPending ? 'Suppression…' : 'Supprimer la demande'}
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Supprimer cette demande</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Êtes-vous sûr de vouloir supprimer définitivement cette demande d&apos;achat ? Cette action est irréversible.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Annuler</AlertDialogCancel>
+                  <AlertDialogAction className="bg-red-600 hover:bg-red-700" onClick={handleDeleteDemande}>
+                    Confirmer la suppression
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
         </div>
       </div>

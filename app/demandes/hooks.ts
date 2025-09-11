@@ -82,6 +82,28 @@ const fetchDemandes = async (): Promise<DemandeFormData[]> => {
   return response.json();
 };
 
+const deleteDemande = async (id: string): Promise<void> => {
+  const url = buildApiUrl(API_CONFIG.endpoints.demande(id))
+  const response = await fetch(url, {
+    method: 'DELETE',
+    headers: createHeaders(),
+  })
+  if (!response.ok) {
+    let errorBody: unknown
+    try {
+      errorBody = await response.json()
+    } catch {
+      errorBody = await response.text()
+    }
+
+    console.error('[deleteDemande] Error response', { status: response.status, statusText: response.statusText, body: errorBody })
+    const message = typeof errorBody === 'object' && errorBody && 'error' in (errorBody as Record<string, unknown>)
+      ? String((errorBody as { error?: unknown }).error)
+      : `${response.status} ${response.statusText}`
+    throw new ApiError(message, response.status, errorBody)
+  }
+}
+
 const fetchDemandeById = async (id: string): Promise<DemandeFormData> => {
   const response = await fetch(buildApiUrl(API_CONFIG.endpoints.demande(id)), {
     headers: createHeaders(),
@@ -121,7 +143,7 @@ const updateDemande = async (formData: FormData): Promise<DemandeFormData> => {
       errorBody = await response.text();
     }
     // Log détaillé en console
-     
+
     console.error('[updateDemande] Error response', { status: response.status, statusText: response.statusText, body: errorBody });
     const message = typeof errorBody === 'object' && errorBody && 'error' in (errorBody as Record<string, unknown>)
       ? String((errorBody as { error?: unknown }).error)
@@ -163,7 +185,7 @@ const updateDemandeWithJsonFile = async (input: { requests: DemandeFormData, fil
       errorBody = await response.text();
     }
     // Log détaillé en console
-     
+
     console.error('[updateDemandeWithJsonFile] Error response', { status: response.status, statusText: response.statusText, body: errorBody });
     const message = typeof errorBody === 'object' && errorBody && 'error' in (errorBody as Record<string, unknown>)
       ? String((errorBody as { error?: unknown }).error)
@@ -205,7 +227,7 @@ const createDemande = async (input: { requests: Partial<DemandeFormData>, files?
       errorBody = await response.text();
     }
     // Log détaillé en console
-     
+
     console.error('[createDemande] Error response', { status: response.status, statusText: response.statusText, body: errorBody });
     const message = typeof errorBody === 'object' && errorBody && 'error' in (errorBody as Record<string, unknown>)
       ? String((errorBody as { error?: unknown }).error)
@@ -272,4 +294,18 @@ export const useCreateDemande = () => {
       queryClient.invalidateQueries({ queryKey: ['demandes'] });
     },
   });
-}; 
+};
+
+export const useDeleteDemande = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => deleteDemande(id),
+    onSuccess: (_data, id) => {
+      // Remove the specific demande from cache
+      queryClient.removeQueries({ queryKey: ['demande', id] })
+      // Invalidate the demandes list
+      queryClient.invalidateQueries({ queryKey: ['demandes'] })
+    },
+  })
+}
