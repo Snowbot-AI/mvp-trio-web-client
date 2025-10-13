@@ -85,8 +85,22 @@ export default function DetailDemande() {
 
   // Recalculer les totaux HT à partir des items et des frais saisis
   const watchedItems = watch("items") ?? []
-  const participationLivraison = watch("total.deliveryTotal") ?? 0
-  const fraisFacturation = watch("total.billingFees") ?? 0
+  const normalizeToNumber = (value: unknown): number => {
+    if (typeof value === 'number' && Number.isFinite(value)) {
+      return value
+    }
+    if (typeof value === 'string') {
+      const parsed = Number(value)
+      if (Number.isFinite(parsed)) {
+        return parsed
+      }
+    }
+    return 0
+  }
+
+  const participationLivraison = normalizeToNumber(watch("total.deliveryTotal"))
+  const fraisFacturation = normalizeToNumber(watch("total.billingFees"))
+  const autresFrais = normalizeToNumber(watch("total.other"))
 
   const orderTotal = watchedItems.reduce((acc: number, item: { price?: number; quantity?: number; unitPrice?: number }) => {
     const linePrice = typeof item?.price === 'number'
@@ -95,13 +109,16 @@ export default function DetailDemande() {
     return acc + (Number.isFinite(linePrice) ? linePrice : 0)
   }, 0)
 
-  const totalHT = orderTotal + (participationLivraison ?? 0) + (fraisFacturation ?? 0)
+  const totalHT = orderTotal + participationLivraison + fraisFacturation + autresFrais
 
   // Propager les totaux dans le form state pour cohérence
   useEffect(() => {
     setValue("total.orderTotal", orderTotal)
+    setValue("total.deliveryTotal", participationLivraison)
+    setValue("total.billingFees", fraisFacturation)
+    setValue("total.other", autresFrais)
     setValue("total.total", totalHT)
-  }, [orderTotal, totalHT, setValue])
+  }, [orderTotal, participationLivraison, fraisFacturation, autresFrais, totalHT, setValue])
 
   // Réinitialiser le formulaire quand les données arrivent
   useEffect(() => {
@@ -854,6 +871,7 @@ export default function DetailDemande() {
                 orderTotal={orderTotal}
                 deliveryTotal={participationLivraison}
                 billingFees={fraisFacturation}
+                other={autresFrais}
                 total={totalHT}
                 modeEdition={modeEdition}
                 register={register}

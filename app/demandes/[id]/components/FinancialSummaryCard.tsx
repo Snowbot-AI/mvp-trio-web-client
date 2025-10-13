@@ -9,6 +9,7 @@ interface FinancialSummaryCardProps {
     orderTotal: number
     deliveryTotal?: number
     billingFees?: number
+    other?: number
     total: number
     modeEdition?: boolean
     register?: UseFormRegister<DemandeFormData>
@@ -21,6 +22,7 @@ export function FinancialSummaryCard({
     orderTotal,
     deliveryTotal,
     billingFees,
+    other,
     total,
     modeEdition = false,
     watch,
@@ -47,9 +49,19 @@ export function FinancialSummaryCard({
         }
     }
 
+    const handleOtherChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (setValue) {
+            const value = e.target.value === "" ? 0 : parseFloat(e.target.value)
+            if (!isNaN(value) && value >= 0) {
+                setValue("total.other", value)
+            }
+        }
+    }
+
     // Utiliser les valeurs surveillées pour une meilleure réactivité
     const watchedDeliveryTotal = watch ? watch("total.deliveryTotal") : deliveryTotal
     const watchedBillingFees = watch ? watch("total.billingFees") : billingFees
+    const watchedOther = watch ? watch("total.other") : other
 
     return (
         <Card>
@@ -107,9 +119,30 @@ export function FinancialSummaryCard({
                     )}
                 </div>
 
+                <div className="flex justify-between items-center">
+                    <span>Autres frais :</span>
+                    {modeEdition ? (
+                        <div className="flex items-center gap-2">
+                            <Input
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                value={Number(watchedOther ?? 0).toFixed(2)}
+                                onChange={handleOtherChange}
+                                className="w-24 text-right"
+                                placeholder="0.00"
+                                onFocus={(e) => e.target.select()}
+                            />
+                            <span className="text-sm text-gray-500">€</span>
+                        </div>
+                    ) : (
+                        <span className="font-medium">{formatPrice(other ?? 0)}</span>
+                    )}
+                </div>
+
                 <hr />
                 <div className="flex justify-between text-lg font-bold">
-                    <span>Total HT :</span>
+                    <span>Total :</span>
                     <span className="text-green-600">{formatPrice(total)}</span>
                 </div>
             </CardContent>
