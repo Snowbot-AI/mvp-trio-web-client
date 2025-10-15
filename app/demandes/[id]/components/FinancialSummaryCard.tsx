@@ -64,7 +64,7 @@ export function FinancialSummaryCard({
     const watchedOther = watch ? watch("total.other") : other
 
     return (
-        <Card>
+        <Card className="h-full justify-between">
             <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                     <Euro className="h-5 w-5" />

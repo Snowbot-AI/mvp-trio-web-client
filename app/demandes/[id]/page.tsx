@@ -29,10 +29,12 @@ import { ActionButtons } from "./components/ActionButtons"
 import { GeneralInfoCard } from "./components/GeneralInfoCard"
 import { FinancialSummaryCard } from "./components/FinancialSummaryCard"
 import { ItemsTable } from "./components/ItemsTable"
-import { ContactInfoCards } from "./components/ContactInfoCards"
 import { FilesSection } from "./components/FilesSection"
 import { PDFModal } from "./components/PDFModal"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
+import { SupplierInfoCard } from "./components/SupplierInfoCard"
+import { BillingInfoCard } from "./components/BillingInfoCard"
+import { DeliveryInfoCard } from "./components/DeliveryInfoCard"
 
 
 export default function DetailDemande() {
@@ -867,17 +869,12 @@ export default function DetailDemande() {
               />
             </div>
             <div className="space-y-6">
-              <FinancialSummaryCard
-                orderTotal={orderTotal}
-                deliveryTotal={participationLivraison}
-                billingFees={fraisFacturation}
-                other={autresFrais}
-                total={totalHT}
+              <SupplierInfoCard
+                demande={demande}
                 modeEdition={modeEdition}
+                validationErrors={modeEdition ? errors : {}}
                 register={register}
-                watch={watch}
-                setValue={setValue}
-                errors={errors}
+
               />
             </div>
           </div>
@@ -900,14 +897,35 @@ export default function DetailDemande() {
           />
 
           {/* 3ème partie : Informations de facturation, fournisseur et livraison */}
-          <ContactInfoCards
-            demande={demande}
-            modeEdition={modeEdition}
-            validationErrors={modeEdition ? errors : {}}
-            register={register}
-            watch={watch}
-            setValue={setValue}
-          />
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            
+            <BillingInfoCard
+                demande={demande}
+                modeEdition={modeEdition}
+                validationErrors={modeEdition ? errors : {}}
+                register={register}
+            />
+
+            <DeliveryInfoCard
+                demande={demande}
+                modeEdition={modeEdition}
+                validationErrors={modeEdition ? errors : {}}
+                register={register}
+            />
+
+            <FinancialSummaryCard
+                orderTotal={orderTotal}
+                deliveryTotal={participationLivraison}
+                billingFees={fraisFacturation}
+                other={autresFrais}
+                total={totalHT}
+                modeEdition={modeEdition}
+                register={register}
+                watch={watch}
+                setValue={setValue}
+                errors={errors}
+            />
+        </div>
 
           {/* 4ème partie : Documents joints */}
           <FilesSection

@@ -26,7 +26,7 @@ export function GeneralInfoCard({
     setValue,
 }: GeneralInfoCardProps) {
     return (
-        <Card>
+        <Card className="h-full justify-around">
             <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                     <FileText className="h-5 w-5" />
