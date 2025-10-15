@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -18,7 +18,8 @@ import {
 } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { Search, CheckCircle, XCircle, Clock, Plus, Loader2, FileText, Edit, Download } from "lucide-react"
-import { useRouter } from "next/navigation"
+import { usePathname, useRouter, useSearchParams } from "next/navigation"
+import { cn } from "@/lib/utils"
 import { getStationName, PurchaseRequestStatus, CodeStation } from "./types"
 import { useDemandes, useCreateDemande } from "./hooks"
 import { DemandeFormData } from "./validation-schema"
@@ -83,11 +84,53 @@ const getLibelleStatut = (statut: PurchaseRequestStatus) => {
       return statut
   }
 }
-
-
 export default function DemandesPage() {
+  type StatutFiltre = PurchaseRequestStatus | "tous"
+
+  const searchParams = useSearchParams()
+  const pathname = usePathname()
+  const router = useRouter()
+
+  const statutQueryKey = "status"
+
+  const statutOptions: StatutFiltre[] = useMemo(() => [
+    "tous",
+    PurchaseRequestStatus.BROUILLON,
+    PurchaseRequestStatus.A_VERIFIER,
+    PurchaseRequestStatus.A_MODIFIER,
+    PurchaseRequestStatus.VALIDEE,
+    PurchaseRequestStatus.REJETEE,
+    PurchaseRequestStatus.SUIVI_COMPTA,
+    PurchaseRequestStatus.EXPORTEE,
+  ], [])
+
+  const extractStatusFromParams = useCallback((params: URLSearchParams | ReturnType<typeof useSearchParams>): StatutFiltre => {
+    const statusParam = params.get(statutQueryKey)
+
+    if (!statusParam) {
+      return "tous"
+    }
+
+    return statutOptions.includes(statusParam as StatutFiltre) ? (statusParam as StatutFiltre) : "tous"
+  }, [statutOptions, statutQueryKey])
+
+  const setQueryParam = (key: string, value: StatutFiltre) => {
+    const params = new URLSearchParams(searchParams.toString())
+
+    if (value === "tous") {
+      params.delete(key)
+    } else {
+      params.set(key, value)
+    }
+
+    const nextQuery = params.toString()
+    const nextPath = nextQuery ? `${pathname}?${nextQuery}` : pathname
+
+    router.replace(nextPath, { scroll: false })
+  }
+
   const [termeRecherche, setTermeRecherche] = useState("")
-  const [filtreStatut, setFiltreStatut] = useState("tous")
+  const [filtreStatut, setFiltreStatut] = useState<StatutFiltre>(() => extractStatusFromParams(searchParams))
   const [filtreStation, setFiltreStation] = useState("tous")
 
   const [formulaireOuvert, setFormulaireOuvert] = useState(false)
@@ -98,15 +141,41 @@ export default function DemandesPage() {
   })
   const [fichiersDevis, setFichiersDevis] = useState<File[]>([])
 
-
-
-  const router = useRouter()
-
   // Utiliser React Query pour récupérer les demandes
   const { data: demandes, isLoading, error } = useDemandes()
 
   // Hook pour créer une nouvelle demande
   const createDemandeMutation = useCreateDemande()
+
+  const handleStatutUpdate = (value: StatutFiltre) => {
+    setFiltreStatut(value)
+    setQueryParam(statutQueryKey, value)
+  }
+
+  const handleResumeCardClick = (status: PurchaseRequestStatus) => {
+    const nextValue: StatutFiltre = filtreStatut === status ? "tous" : status
+    handleStatutUpdate(nextValue)
+  }
+
+  const handleResumeCardKeyDown = (event: React.KeyboardEvent<HTMLDivElement>, status: PurchaseRequestStatus) => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault()
+      handleResumeCardClick(status)
+    }
+  }
+
+  const handleStatutSelect = (value: string) => {
+    const nextValue = statutOptions.includes(value as StatutFiltre) ? (value as StatutFiltre) : "tous"
+    handleStatutUpdate(nextValue)
+  }
+
+  useEffect(() => {
+    const statusFromParams = extractStatusFromParams(searchParams)
+
+    if (statusFromParams !== filtreStatut) {
+      setFiltreStatut(statusFromParams)
+    }
+  }, [searchParams, filtreStatut, extractStatusFromParams])
 
   const demandesFiltrees = (demandes || []).filter((dem: DemandeFormData) => {
     const correspondRecherche =
@@ -119,7 +188,7 @@ export default function DemandesPage() {
       (dem.provider?.name?.toLowerCase() || '').includes(termeRecherche.toLowerCase()) ||
       (dem.provider?.address?.toLowerCase() || '').includes(termeRecherche.toLowerCase()) ||
       (dem.delivery?.address?.toLowerCase() || '').includes(termeRecherche.toLowerCase()) ||
-      (dem.items?.some(item =>
+      (dem.items?.some((item) =>
         item.description?.toLowerCase().includes(termeRecherche.toLowerCase()) ||
         item.service?.toLowerCase().includes(termeRecherche.toLowerCase()) ||
         item.referenceDevis?.toLowerCase().includes(termeRecherche.toLowerCase())
@@ -140,6 +209,74 @@ export default function DemandesPage() {
     [PurchaseRequestStatus.EXPORTEE]: (demandes || []).filter((d: DemandeFormData) => d.status === PurchaseRequestStatus.EXPORTEE).length,
   }
 
+  type ResumeCardConfig = {
+    key: PurchaseRequestStatus
+    label: string
+    count: number
+    Icon: React.ComponentType<React.SVGProps<SVGSVGElement>>
+    iconClassName: string
+    valueClassName: string
+  }
+
+  const resumeCards: ResumeCardConfig[] = [
+    {
+      key: PurchaseRequestStatus.BROUILLON,
+      label: "Brouillon",
+      count: comptesStatut[PurchaseRequestStatus.BROUILLON],
+      Icon: FileText,
+      iconClassName: "text-gray-600",
+      valueClassName: "text-gray-600",
+    },
+    {
+      key: PurchaseRequestStatus.A_VERIFIER,
+      label: "À vérifier",
+      count: comptesStatut[PurchaseRequestStatus.A_VERIFIER],
+      Icon: Clock,
+      iconClassName: "text-blue-600",
+      valueClassName: "text-blue-600",
+    },
+    {
+      key: PurchaseRequestStatus.A_MODIFIER,
+      label: "À modifier",
+      count: comptesStatut[PurchaseRequestStatus.A_MODIFIER],
+      Icon: Edit,
+      iconClassName: "text-orange-600",
+      valueClassName: "text-orange-600",
+    },
+    {
+      key: PurchaseRequestStatus.VALIDEE,
+      label: "Validées",
+      count: comptesStatut[PurchaseRequestStatus.VALIDEE],
+      Icon: CheckCircle,
+      iconClassName: "text-green-600",
+      valueClassName: "text-green-600",
+    },
+    {
+      key: PurchaseRequestStatus.REJETEE,
+      label: "Rejetées",
+      count: comptesStatut[PurchaseRequestStatus.REJETEE],
+      Icon: XCircle,
+      iconClassName: "text-red-600",
+      valueClassName: "text-red-600",
+    },
+    {
+      key: PurchaseRequestStatus.SUIVI_COMPTA,
+      label: "Suivi compta",
+      count: comptesStatut[PurchaseRequestStatus.SUIVI_COMPTA],
+      Icon: Clock,
+      iconClassName: "text-purple-600",
+      valueClassName: "text-purple-600",
+    },
+    {
+      key: PurchaseRequestStatus.EXPORTEE,
+      label: "Exportées",
+      count: comptesStatut[PurchaseRequestStatus.EXPORTEE],
+      Icon: Download,
+      iconClassName: "text-indigo-600",
+      valueClassName: "text-indigo-600",
+    },
+  ]
+
   const montantTotal = demandesFiltrees.reduce((somme: number, dem: DemandeFormData) => somme + (dem.total.total || 0), 0)
 
   const gererSoumissionFormulaire = async (e: React.FormEvent) => {
@@ -155,12 +292,6 @@ export default function DemandesPage() {
         priority: "LOW",
         status: PurchaseRequestStatus.BROUILLON,
         items: [], // Sera rempli plus tard
-        // billing: {
-        //   name: "",
-        //   siret: "", // Valeur par défaut
-        //   address: "",
-        //   emails: [],
-        // },
         total: {
           orderTotal: 0,
           total: 0,
@@ -381,63 +512,40 @@ export default function DemandesPage() {
         </div>
 
         {/* Cartes de résumé */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4">
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">Brouillon</p>
-                  <p className="text-2xl font-bold text-gray-600">{comptesStatut[PurchaseRequestStatus.BROUILLON]}</p>
-                </div>
-                <FileText className="h-8 w-8 text-gray-600" />
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">À vérifier</p>
-                  <p className="text-2xl font-bold text-blue-600">{comptesStatut[PurchaseRequestStatus.A_VERIFIER]}</p>
-                </div>
-                <Clock className="h-8 w-8 text-blue-600" />
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">À modifier</p>
-                  <p className="text-2xl font-bold text-orange-600">{comptesStatut[PurchaseRequestStatus.A_MODIFIER]}</p>
-                </div>
-                <Edit className="h-8 w-8 text-orange-600" />
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">Validées</p>
-                  <p className="text-2xl font-bold text-green-600">{comptesStatut[PurchaseRequestStatus.VALIDEE]}</p>
-                </div>
-                <CheckCircle className="h-8 w-8 text-green-600" />
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">Rejetées</p>
-                  <p className="text-2xl font-bold text-red-600">{comptesStatut[PurchaseRequestStatus.REJETEE]}</p>
-                </div>
-                <XCircle className="h-8 w-8 text-red-600" />
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-7 gap-4">
+          {resumeCards.map(({ key, label, count, Icon, iconClassName, valueClassName }) => {
+            const isActive = filtreStatut === key
+
+            const ariaLabel = `Filtrer les demandes avec le statut ${label}`
+
+            return (
+              <Card
+                key={key}
+                role="button"
+                tabIndex={0}
+                aria-pressed={isActive}
+                aria-label={ariaLabel}
+                onClick={() => handleResumeCardClick(key)}
+                onKeyDown={(event) => handleResumeCardKeyDown(event, key)}
+                className={cn(
+                  "transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
+                  "cursor-pointer border",
+                  isActive ? "border-primary bg-primary/10" : "border-transparent hover:border-gray-200 hover:bg-white"
+                )}
+              >
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-gray-600">{label}</p>
+                      <p className={cn("text-2xl font-bold", valueClassName)}>{count}</p>
+                    </div>
+                    <Icon className={cn("h-8 w-8", iconClassName)} />
+                  </div>
+                </CardContent>
+              </Card>
+            )
+          })}
+          <Card className="border border-gray-200 bg-white">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -462,7 +570,7 @@ export default function DemandesPage() {
                   className="pl-10"
                 />
               </div>
-              <Select value={filtreStatut} onValueChange={setFiltreStatut}>
+              <Select value={filtreStatut} onValueChange={handleStatutSelect}>
                 <SelectTrigger className="w-full md:w-48">
                   <SelectValue placeholder="Filtrer par statut" />
                 </SelectTrigger>
