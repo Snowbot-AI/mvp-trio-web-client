@@ -512,7 +512,7 @@ const DemandesPageContent = () => {
         </div>
 
         {/* Cartes de résumé */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-7 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
           {resumeCards.map(({ key, label, count, Icon, iconClassName, valueClassName }) => {
             const isActive = filtreStatut === key
 
