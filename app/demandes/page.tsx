@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { Suspense, useCallback, useEffect, useMemo, useState } from "react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -84,7 +84,7 @@ const getLibelleStatut = (statut: PurchaseRequestStatus) => {
       return statut
   }
 }
-export default function DemandesPage() {
+const DemandesPageContent = () => {
   type StatutFiltre = PurchaseRequestStatus | "tous"
 
   const searchParams = useSearchParams()
@@ -660,4 +660,23 @@ export default function DemandesPage() {
       </div>
     </div>
   )
-} 
+}
+
+export default function DemandesPage() {
+  return (
+    <Suspense
+      fallback={(
+        <div className="min-h-screen bg-gray-50 p-6 pt-8">
+          <div className="max-w-7xl mx-auto flex items-center justify-center h-64">
+            <div className="flex items-center gap-2 text-gray-600">
+              <Loader2 className="h-6 w-6 animate-spin" />
+              <span>Chargement des demandes...</span>
+            </div>
+          </div>
+        </div>
+      )}
+    >
+      <DemandesPageContent />
+    </Suspense>
+  )
+}
