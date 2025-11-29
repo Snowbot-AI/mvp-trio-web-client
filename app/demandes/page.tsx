@@ -80,7 +80,7 @@ const getLibelleStatut = (statut: PurchaseRequestStatus) => {
 };
 const DemandesPageContent = () => {
   type StatutFiltre = PurchaseRequestStatus | "tous";
-  const currentUser = useCurrentUser(); // ← AJOUT
+  const currentUser = useCurrentUser();
 
   const searchParams = useSearchParams();
   const pathname = usePathname();
