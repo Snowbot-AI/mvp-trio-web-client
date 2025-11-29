@@ -1,203 +1,206 @@
-"use client"
+"use client";
 
-import type React from "react"
-import { Suspense, useCallback, useEffect, useMemo, useState } from "react"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
-import { Label } from "@/components/ui/label"
-import { Search, CheckCircle, XCircle, Clock, Plus, Loader2, FileText, Edit, Download } from "lucide-react"
-import { usePathname, useRouter, useSearchParams } from "next/navigation"
-import { cn } from "@/lib/utils"
-import { getStationName, PurchaseRequestStatus, CodeStation } from "./types"
-import { useDemandes, useCreateDemande } from "./hooks"
-import { DemandeFormData } from "./validation-schema"
+import type React from "react";
+import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Search, CheckCircle, XCircle, Clock, Plus, Loader2, FileText, Edit, Download } from "lucide-react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { cn } from "@/lib/utils";
+import { getStationName, PurchaseRequestStatus, CodeStation } from "./types";
+import { useDemandes, useCreateDemande } from "./hooks";
+import { DemandeFormData } from "./validation-schema";
+import { useCurrentUser } from "./useCurrentUser";
 
 const getIconeStatut = (statut: PurchaseRequestStatus) => {
   switch (statut) {
     case PurchaseRequestStatus.VALIDEE:
-      return <CheckCircle className="h-4 w-4 text-green-600" />
+      return <CheckCircle className="h-4 w-4 text-green-600" />;
     case PurchaseRequestStatus.REJETEE:
-      return <XCircle className="h-4 w-4 text-red-600" />
+      return <XCircle className="h-4 w-4 text-red-600" />;
     case PurchaseRequestStatus.A_VERIFIER:
-      return <Clock className="h-4 w-4 text-blue-600" />
+      return <Clock className="h-4 w-4 text-blue-600" />;
     case PurchaseRequestStatus.A_MODIFIER:
-      return <Edit className="h-4 w-4 text-orange-600" />
+      return <Edit className="h-4 w-4 text-orange-600" />;
     case PurchaseRequestStatus.SUIVI_COMPTA:
-      return <Clock className="h-4 w-4 text-purple-600" />
+      return <Clock className="h-4 w-4 text-purple-600" />;
     case PurchaseRequestStatus.EXPORTEE:
-      return <Download className="h-4 w-4 text-indigo-600" />
+      return <Download className="h-4 w-4 text-indigo-600" />;
     case PurchaseRequestStatus.BROUILLON:
     default:
-      return <FileText className="h-4 w-4 text-gray-600" />
+      return <FileText className="h-4 w-4 text-gray-600" />;
   }
-}
+};
 
 const getCouleurStatut = (statut: PurchaseRequestStatus) => {
   switch (statut) {
     case PurchaseRequestStatus.VALIDEE:
-      return "bg-green-100 text-green-800 border-green-200"
+      return "bg-green-100 text-green-800 border-green-200";
     case PurchaseRequestStatus.REJETEE:
-      return "bg-red-100 text-red-800 border-red-200"
+      return "bg-red-100 text-red-800 border-red-200";
     case PurchaseRequestStatus.A_VERIFIER:
-      return "bg-blue-100 text-blue-800 border-blue-200"
+      return "bg-blue-100 text-blue-800 border-blue-200";
     case PurchaseRequestStatus.A_MODIFIER:
-      return "bg-orange-100 text-orange-800 border-orange-200"
+      return "bg-orange-100 text-orange-800 border-orange-200";
     case PurchaseRequestStatus.SUIVI_COMPTA:
-      return "bg-purple-100 text-purple-800 border-purple-200"
+      return "bg-purple-100 text-purple-800 border-purple-200";
     case PurchaseRequestStatus.EXPORTEE:
-      return "bg-indigo-100 text-indigo-800 border-indigo-200"
+      return "bg-indigo-100 text-indigo-800 border-indigo-200";
     case PurchaseRequestStatus.BROUILLON:
     default:
-      return "bg-gray-100 text-gray-800 border-gray-200"
+      return "bg-gray-100 text-gray-800 border-gray-200";
   }
-}
+};
 
 const getLibelleStatut = (statut: PurchaseRequestStatus) => {
   switch (statut) {
     case PurchaseRequestStatus.BROUILLON:
-      return "Brouillon"
+      return "Brouillon";
     case PurchaseRequestStatus.A_VERIFIER:
-      return "À vérifier"
+      return "À vérifier";
     case PurchaseRequestStatus.A_MODIFIER:
-      return "À modifier"
+      return "À modifier";
     case PurchaseRequestStatus.VALIDEE:
-      return "Validée"
+      return "Validée";
     case PurchaseRequestStatus.REJETEE:
-      return "Rejetée"
+      return "Rejetée";
     case PurchaseRequestStatus.SUIVI_COMPTA:
-      return "Suivi compta"
+      return "Suivi compta";
     case PurchaseRequestStatus.EXPORTEE:
-      return "Exportée"
+      return "Exportée";
     default:
-      return statut
+      return statut;
   }
-}
+};
 const DemandesPageContent = () => {
-  type StatutFiltre = PurchaseRequestStatus | "tous"
+  type StatutFiltre = PurchaseRequestStatus | "tous";
+  const currentUser = useCurrentUser();
 
-  const searchParams = useSearchParams()
-  const pathname = usePathname()
-  const router = useRouter()
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
+  const router = useRouter();
 
-  const statutQueryKey = "status"
+  const statutQueryKey = "status";
 
-  const statutOptions: StatutFiltre[] = useMemo(() => [
-    "tous",
-    PurchaseRequestStatus.BROUILLON,
-    PurchaseRequestStatus.A_VERIFIER,
-    PurchaseRequestStatus.A_MODIFIER,
-    PurchaseRequestStatus.VALIDEE,
-    PurchaseRequestStatus.REJETEE,
-    PurchaseRequestStatus.SUIVI_COMPTA,
-    PurchaseRequestStatus.EXPORTEE,
-  ], [])
+  const statutOptions: StatutFiltre[] = useMemo(
+    () => [
+      "tous",
+      PurchaseRequestStatus.BROUILLON,
+      PurchaseRequestStatus.A_VERIFIER,
+      PurchaseRequestStatus.A_MODIFIER,
+      PurchaseRequestStatus.VALIDEE,
+      PurchaseRequestStatus.REJETEE,
+      PurchaseRequestStatus.SUIVI_COMPTA,
+      PurchaseRequestStatus.EXPORTEE,
+    ],
+    []
+  );
 
-  const extractStatusFromParams = useCallback((params: URLSearchParams | ReturnType<typeof useSearchParams>): StatutFiltre => {
-    const statusParam = params.get(statutQueryKey)
+  const extractStatusFromParams = useCallback(
+    (params: URLSearchParams | ReturnType<typeof useSearchParams>): StatutFiltre => {
+      const statusParam = params.get(statutQueryKey);
 
-    if (!statusParam) {
-      return "tous"
-    }
+      if (!statusParam) {
+        return "tous";
+      }
 
-    return statutOptions.includes(statusParam as StatutFiltre) ? (statusParam as StatutFiltre) : "tous"
-  }, [statutOptions, statutQueryKey])
+      return statutOptions.includes(statusParam as StatutFiltre) ? (statusParam as StatutFiltre) : "tous";
+    },
+    [statutOptions, statutQueryKey]
+  );
 
   const setQueryParam = (key: string, value: StatutFiltre) => {
-    const params = new URLSearchParams(searchParams.toString())
+    const params = new URLSearchParams(searchParams.toString());
 
     if (value === "tous") {
-      params.delete(key)
+      params.delete(key);
     } else {
-      params.set(key, value)
+      params.set(key, value);
     }
 
-    const nextQuery = params.toString()
-    const nextPath = nextQuery ? `${pathname}?${nextQuery}` : pathname
+    const nextQuery = params.toString();
+    const nextPath = nextQuery ? `${pathname}?${nextQuery}` : pathname;
 
-    router.replace(nextPath, { scroll: false })
-  }
+    router.replace(nextPath, { scroll: false });
+  };
 
-  const [termeRecherche, setTermeRecherche] = useState("")
-  const [filtreStatut, setFiltreStatut] = useState<StatutFiltre>(() => extractStatusFromParams(searchParams))
-  const [filtreStation, setFiltreStation] = useState("tous")
+  const [termeRecherche, setTermeRecherche] = useState("");
+  const [filtreStatut, setFiltreStatut] = useState<StatutFiltre>(() => extractStatusFromParams(searchParams));
+  const [filtreStation, setFiltreStation] = useState("tous");
 
-  const [formulaireOuvert, setFormulaireOuvert] = useState(false)
+  const [formulaireOuvert, setFormulaireOuvert] = useState(false);
   const [nouvelleDemande, setNouvelleDemande] = useState({
     from: "LAUBRAY",
     codeStation: CodeStation.CODE_06 as CodeStation,
     description: "",
-  })
-  const [fichiersDevis, setFichiersDevis] = useState<File[]>([])
+  });
+  const [fichiersDevis, setFichiersDevis] = useState<File[]>([]);
 
   // Utiliser React Query pour récupérer les demandes
-  const { data: demandes, isLoading, error } = useDemandes()
+  const { data: demandes, isLoading, error } = useDemandes();
 
   // Hook pour créer une nouvelle demande
-  const createDemandeMutation = useCreateDemande()
+  const createDemandeMutation = useCreateDemande();
 
   const handleStatutUpdate = (value: StatutFiltre) => {
-    setFiltreStatut(value)
-    setQueryParam(statutQueryKey, value)
-  }
+    setFiltreStatut(value);
+    setQueryParam(statutQueryKey, value);
+  };
 
   const handleResumeCardClick = (status: PurchaseRequestStatus) => {
-    const nextValue: StatutFiltre = filtreStatut === status ? "tous" : status
-    handleStatutUpdate(nextValue)
-  }
+    const nextValue: StatutFiltre = filtreStatut === status ? "tous" : status;
+    handleStatutUpdate(nextValue);
+  };
 
   const handleResumeCardKeyDown = (event: React.KeyboardEvent<HTMLDivElement>, status: PurchaseRequestStatus) => {
     if (event.key === "Enter" || event.key === " ") {
-      event.preventDefault()
-      handleResumeCardClick(status)
+      event.preventDefault();
+      handleResumeCardClick(status);
     }
-  }
+  };
 
   const handleStatutSelect = (value: string) => {
-    const nextValue = statutOptions.includes(value as StatutFiltre) ? (value as StatutFiltre) : "tous"
-    handleStatutUpdate(nextValue)
-  }
+    const nextValue = statutOptions.includes(value as StatutFiltre) ? (value as StatutFiltre) : "tous";
+    handleStatutUpdate(nextValue);
+  };
 
   useEffect(() => {
-    const statusFromParams = extractStatusFromParams(searchParams)
+    const statusFromParams = extractStatusFromParams(searchParams);
 
     if (statusFromParams !== filtreStatut) {
-      setFiltreStatut(statusFromParams)
+      setFiltreStatut(statusFromParams);
     }
-  }, [searchParams, filtreStatut, extractStatusFromParams])
+  }, [searchParams, filtreStatut, extractStatusFromParams]);
 
   const demandesFiltrees = (demandes || []).filter((dem: DemandeFormData) => {
     const correspondRecherche =
-      (dem.from?.toLowerCase() || '').includes(termeRecherche.toLowerCase()) ||
-      (dem.id?.toLowerCase() || '').includes(termeRecherche.toLowerCase()) ||
-      (dem.description?.toLowerCase() || '').includes(termeRecherche.toLowerCase()) ||
-      (dem.billing?.name?.toLowerCase() || '').includes(termeRecherche.toLowerCase()) ||
-      (dem.billing?.address?.toLowerCase() || '').includes(termeRecherche.toLowerCase()) ||
-      (dem.billing?.siret?.toLowerCase() || '').includes(termeRecherche.toLowerCase()) ||
-      (dem.provider?.name?.toLowerCase() || '').includes(termeRecherche.toLowerCase()) ||
-      (dem.provider?.address?.toLowerCase() || '').includes(termeRecherche.toLowerCase()) ||
-      (dem.delivery?.address?.toLowerCase() || '').includes(termeRecherche.toLowerCase()) ||
-      (dem.items?.some((item) =>
-        item.description?.toLowerCase().includes(termeRecherche.toLowerCase()) ||
-        item.service?.toLowerCase().includes(termeRecherche.toLowerCase()) ||
-        item.referenceDevis?.toLowerCase().includes(termeRecherche.toLowerCase())
-      ) || false)
-    const correspondStatut = filtreStatut === "tous" || dem.status === filtreStatut
-    const correspondStation = filtreStation === "tous" || dem.codeStation === filtreStation
+      (dem.from?.toLowerCase() || "").includes(termeRecherche.toLowerCase()) ||
+      (dem.id?.toLowerCase() || "").includes(termeRecherche.toLowerCase()) ||
+      (dem.description?.toLowerCase() || "").includes(termeRecherche.toLowerCase()) ||
+      (dem.billing?.name?.toLowerCase() || "").includes(termeRecherche.toLowerCase()) ||
+      (dem.billing?.address?.toLowerCase() || "").includes(termeRecherche.toLowerCase()) ||
+      (dem.billing?.siret?.toLowerCase() || "").includes(termeRecherche.toLowerCase()) ||
+      (dem.provider?.name?.toLowerCase() || "").includes(termeRecherche.toLowerCase()) ||
+      (dem.provider?.address?.toLowerCase() || "").includes(termeRecherche.toLowerCase()) ||
+      (dem.delivery?.address?.toLowerCase() || "").includes(termeRecherche.toLowerCase()) ||
+      dem.items?.some(
+        (item) =>
+          item.description?.toLowerCase().includes(termeRecherche.toLowerCase()) ||
+          item.service?.toLowerCase().includes(termeRecherche.toLowerCase()) ||
+          item.referenceDevis?.toLowerCase().includes(termeRecherche.toLowerCase())
+      ) ||
+      false;
+    const correspondStatut = filtreStatut === "tous" || dem.status === filtreStatut;
+    const correspondStation = filtreStation === "tous" || dem.codeStation === filtreStation;
 
-    return correspondRecherche && correspondStatut && correspondStation
-  })
+    return correspondRecherche && correspondStatut && correspondStation;
+  });
 
   const comptesStatut = {
     [PurchaseRequestStatus.BROUILLON]: (demandes || []).filter((d: DemandeFormData) => d.status === PurchaseRequestStatus.BROUILLON).length,
@@ -207,16 +210,16 @@ const DemandesPageContent = () => {
     [PurchaseRequestStatus.REJETEE]: (demandes || []).filter((d: DemandeFormData) => d.status === PurchaseRequestStatus.REJETEE).length,
     [PurchaseRequestStatus.SUIVI_COMPTA]: (demandes || []).filter((d: DemandeFormData) => d.status === PurchaseRequestStatus.SUIVI_COMPTA).length,
     [PurchaseRequestStatus.EXPORTEE]: (demandes || []).filter((d: DemandeFormData) => d.status === PurchaseRequestStatus.EXPORTEE).length,
-  }
+  };
 
   type ResumeCardConfig = {
-    key: PurchaseRequestStatus
-    label: string
-    count: number
-    Icon: React.ComponentType<React.SVGProps<SVGSVGElement>>
-    iconClassName: string
-    valueClassName: string
-  }
+    key: PurchaseRequestStatus;
+    label: string;
+    count: number;
+    Icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
+    iconClassName: string;
+    valueClassName: string;
+  };
 
   const resumeCards: ResumeCardConfig[] = [
     {
@@ -275,12 +278,12 @@ const DemandesPageContent = () => {
       iconClassName: "text-indigo-600",
       valueClassName: "text-indigo-600",
     },
-  ]
+  ];
 
-  const montantTotal = demandesFiltrees.reduce((somme: number, dem: DemandeFormData) => somme + (dem.total.total || 0), 0)
+  const montantTotal = demandesFiltrees.reduce((somme: number, dem: DemandeFormData) => somme + (dem.total.total || 0), 0);
 
   const gererSoumissionFormulaire = async (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
 
     try {
       // Créer une demande minimale avec le statut BROUILLON
@@ -296,50 +299,53 @@ const DemandesPageContent = () => {
           orderTotal: 0,
           total: 0,
         },
-        files: fichiersDevis.length > 0 ? fichiersDevis.map((fichier) => ({
-          name: fichier.name,
-          category: 'quotations',
-          uploadInstant: new Date().toISOString(),
-        })) : [],
-      }
+        files:
+          fichiersDevis.length > 0
+            ? fichiersDevis.map((fichier) => ({
+                name: fichier.name,
+                category: "quotations",
+                uploadInstant: new Date().toISOString(),
+              }))
+            : [],
+      };
 
       // Utiliser la mutation pour créer la demande avec le format multipart
       const createdDemande = await createDemandeMutation.mutateAsync({
         requests: demandeData,
-        files: fichiersDevis
-      })
+        files: fichiersDevis,
+      });
 
       // Réinitialiser le formulaire
       setNouvelleDemande({
         from: "LAUBRAY",
         codeStation: CodeStation.CODE_06 as CodeStation,
         description: "",
-      })
-      setFichiersDevis([])
+      });
+      setFichiersDevis([]);
 
       // Fermer le modal
-      setFormulaireOuvert(false)
+      setFormulaireOuvert(false);
 
       // Rediriger vers la page de détail de la nouvelle demande
       if (createdDemande.id) {
-        router.push(`/demandes/${createdDemande.id}`)
+        router.push(`/demandes/${createdDemande.id}`);
       }
     } catch (error) {
-      console.error('Erreur lors de la création de la demande:', error)
-      alert(`Erreur lors de la création: ${error instanceof Error ? error.message : 'Erreur inconnue'}`)
+      console.log("Erreur lors de la création de la demande:", error);
+      alert(`Erreur lors de la création: ${error instanceof Error ? error.message : "Erreur inconnue"}`);
     }
-  }
+  };
 
   const gererChangementChamp = (champ: string, valeur: string) => {
     setNouvelleDemande((prev) => ({
       ...prev,
       [champ]: valeur,
-    }))
-  }
+    }));
+  };
 
   const gererChangementFichiers = (files: File[]) => {
-    setFichiersDevis(files)
-  }
+    setFichiersDevis(files);
+  };
 
   // Affichage du loading
   if (isLoading) {
@@ -352,7 +358,7 @@ const DemandesPageContent = () => {
           </div>
         </div>
       </div>
-    )
+    );
   }
 
   // Affichage de l'erreur
@@ -363,17 +369,13 @@ const DemandesPageContent = () => {
           <div className="bg-red-50 border border-red-200 rounded-lg p-4">
             <h2 className="text-red-800 font-semibold">Erreur lors du chargement</h2>
             <p className="text-red-600 mt-1">{error.message}</p>
-            <Button
-              onClick={() => window.location.reload()}
-              className="mt-2"
-              variant="outline"
-            >
+            <Button onClick={() => window.location.reload()} className="mt-2" variant="outline">
               Réessayer
             </Button>
           </div>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -388,135 +390,125 @@ const DemandesPageContent = () => {
           </div>
 
           {/* Bouton Nouvelle Demande */}
-          <div className="flex justify-center md:justify-end">
-            <Dialog open={formulaireOuvert} onOpenChange={setFormulaireOuvert}>
-              <DialogTrigger asChild>
-                <Button className="flex items-center gap-2">
-                  <Plus className="h-4 w-4" />
-                  Nouvelle Demande
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="w-full md:max-w-3xl">
-                <DialogHeader>
-                  <DialogTitle>Créer une nouvelle demande d&apos;achat</DialogTitle>
-                  <DialogDescription>
-                    Remplissez les informations de base pour créer un brouillon de demande
-                  </DialogDescription>
-                </DialogHeader>
-                <form onSubmit={gererSoumissionFormulaire} className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="md:col-span-1">
-                      <Label htmlFor="from" className="text-sm font-medium">
-                        Demandeur *
-                      </Label>
-                      <Input
-                        id="from"
-                        value={nouvelleDemande.from}
-                        onChange={(e) => gererChangementChamp("from", e.target.value)}
-                        placeholder="Nom du demandeur"
-                        required
-                        className="mt-1"
-                      />
+          {currentUser?.role === "DEMANDEUR" && (
+            <div className="flex justify-center md:justify-end">
+              <Dialog open={formulaireOuvert} onOpenChange={setFormulaireOuvert}>
+                <DialogTrigger asChild>
+                  <Button className="flex items-center gap-2">
+                    <Plus className="h-4 w-4" />
+                    Nouvelle Demande
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="w-full md:max-w-3xl">
+                  <DialogHeader>
+                    <DialogTitle>Créer une nouvelle demande d&apos;achat</DialogTitle>
+                    <DialogDescription>Remplissez les informations de base pour créer un brouillon de demande</DialogDescription>
+                  </DialogHeader>
+                  <form onSubmit={gererSoumissionFormulaire} className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="md:col-span-1">
+                        <Label htmlFor="from" className="text-sm font-medium">
+                          Demandeur *
+                        </Label>
+                        <Input
+                          id="from"
+                          value={nouvelleDemande.from}
+                          onChange={(e) => gererChangementChamp("from", e.target.value)}
+                          placeholder="Nom du demandeur"
+                          required
+                          className="mt-1"
+                        />
+                      </div>
+
+                      <div className="md:col-span-1">
+                        <Label htmlFor="codeStation" className="text-sm font-medium">
+                          Station *
+                        </Label>
+                        <Select
+                          value={nouvelleDemande.codeStation}
+                          onValueChange={(value: CodeStation) => {
+                            gererChangementChamp("codeStation", value);
+                          }}
+                          required
+                        >
+                          <SelectTrigger className="mt-1">
+                            <SelectValue placeholder="Sélectionner une station" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value={CodeStation.CODE_00}>Siège</SelectItem>
+                            <SelectItem value={CodeStation.CODE_06}>Cambre d&apos;Aze</SelectItem>
+                            <SelectItem value={CodeStation.CODE_07}>Porté-Puymorens</SelectItem>
+                            <SelectItem value={CodeStation.CODE_08}>Formiguères</SelectItem>
+                            <SelectItem value={CodeStation.CODE_999}>Restauration</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="md:col-span-1">
+                        <Label htmlFor="description" className="text-sm font-medium">
+                          Description *
+                        </Label>
+                        <Input
+                          id="description"
+                          value={nouvelleDemande.description}
+                          onChange={(e) => gererChangementChamp("description", e.target.value)}
+                          placeholder="Description de la demande..."
+                          className="mt-1"
+                          required
+                        />
+                      </div>
+
+                      <div className="md:col-span-2">
+                        <Label htmlFor="devis" className="text-sm font-medium">
+                          Devis
+                        </Label>
+                        <Input
+                          id="devis"
+                          type="file"
+                          accept=".pdf,.jpg,.jpeg,.png"
+                          multiple
+                          onChange={(e) => gererChangementFichiers(e.target.files ? Array.from(e.target.files) : [])}
+                          className="mt-1"
+                        />
+                      </div>
                     </div>
 
-                    <div className="md:col-span-1">
-                      <Label htmlFor="codeStation" className="text-sm font-medium">
-                        Station *
-                      </Label>
-                      <Select
-                        value={nouvelleDemande.codeStation}
-                        onValueChange={(value: CodeStation) => {
-                          gererChangementChamp("codeStation", value)
-                        }}
-                        required
-                      >
-                        <SelectTrigger className="mt-1">
-                          <SelectValue placeholder="Sélectionner une station" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value={CodeStation.CODE_00}>Siège</SelectItem>
-                          <SelectItem value={CodeStation.CODE_06}>Cambre d&apos;Aze</SelectItem>
-                          <SelectItem value={CodeStation.CODE_07}>Porté-Puymorens</SelectItem>
-                          <SelectItem value={CodeStation.CODE_08}>Formiguères</SelectItem>
-                          <SelectItem value={CodeStation.CODE_999}>Restauration</SelectItem>
-                        </SelectContent>
-                      </Select>
+                    <div className="flex items-center justify-between pt-4 border-t">
+                      <p className="text-sm text-gray-500">* Champs obligatoires</p>
+                      <div className="flex gap-2">
+                        <Button type="button" variant="outline" onClick={() => setFormulaireOuvert(false)} disabled={createDemandeMutation.isPending}>
+                          Annuler
+                        </Button>
+                        <Button
+                          type="submit"
+                          disabled={
+                            createDemandeMutation.isPending || !nouvelleDemande.from || !nouvelleDemande.codeStation || !nouvelleDemande.description
+                          }
+                        >
+                          {createDemandeMutation.isPending ? (
+                            <>
+                              <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                              Création...
+                            </>
+                          ) : (
+                            "Créer le brouillon"
+                          )}
+                        </Button>
+                      </div>
                     </div>
-
-                    <div className="md:col-span-1">
-                      <Label htmlFor="description" className="text-sm font-medium">
-                        Description *
-                      </Label>
-                      <Input
-                        id="description"
-                        value={nouvelleDemande.description}
-                        onChange={(e) => gererChangementChamp("description", e.target.value)}
-                        placeholder="Description de la demande..."
-                        className="mt-1"
-                        required
-                      />
-                    </div>
-
-
-
-                    <div className="md:col-span-2">
-                      <Label htmlFor="devis" className="text-sm font-medium">
-                        Devis
-                      </Label>
-                      <Input
-                        id="devis"
-                        type="file"
-                        accept=".pdf,.jpg,.jpeg,.png"
-                        multiple
-                        onChange={(e) => gererChangementFichiers(e.target.files ? Array.from(e.target.files) : [])}
-                        className="mt-1"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between pt-4 border-t">
-                    <p className="text-sm text-gray-500">* Champs obligatoires</p>
-                    <div className="flex gap-2">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => setFormulaireOuvert(false)}
-                        disabled={createDemandeMutation.isPending}
-                      >
-                        Annuler
-                      </Button>
-                      <Button
-                        type="submit"
-                        disabled={
-                          createDemandeMutation.isPending ||
-                          !nouvelleDemande.from ||
-                          !nouvelleDemande.codeStation ||
-                          !nouvelleDemande.description
-                        }
-                      >
-                        {createDemandeMutation.isPending ? (
-                          <>
-                            <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                            Création...
-                          </>
-                        ) : (
-                          "Créer le brouillon"
-                        )}
-                      </Button>
-                    </div>
-                  </div>
-                </form>
-              </DialogContent>
-            </Dialog>
-          </div>
+                  </form>
+                </DialogContent>
+              </Dialog>
+            </div>
+          )}
         </div>
 
         {/* Cartes de résumé */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
           {resumeCards.map(({ key, label, count, Icon, iconClassName, valueClassName }) => {
-            const isActive = filtreStatut === key
+            const isActive = filtreStatut === key;
 
-            const ariaLabel = `Filtrer les demandes avec le statut ${label}`
+            const ariaLabel = `Filtrer les demandes avec le statut ${label}`;
 
             return (
               <Card
@@ -543,7 +535,7 @@ const DemandesPageContent = () => {
                   </div>
                 </CardContent>
               </Card>
-            )
+            );
           })}
           <Card className="border border-gray-200 bg-white">
             <CardContent className="p-4">
@@ -624,21 +616,23 @@ const DemandesPageContent = () => {
               <TableBody>
                 {demandesFiltrees.map((dem) => (
                   <TableRow
-                    key={dem.id || 'unknown'}
+                    key={dem.id || "unknown"}
                     className="cursor-pointer hover:bg-gray-50 transition-colors"
                     onClick={() => dem.id && router.push(`/demandes/${dem.id}`)}
                   >
-                    <TableCell className="font-medium">{dem.from || 'N/A'}</TableCell>
-                    <TableCell>{dem.date ? new Date(dem.date).toLocaleDateString("fr-FR") : 'N/A'}</TableCell>
-                    <TableCell>{getStationName(dem.codeStation) || 'N/A'}</TableCell>
-                    <TableCell className="max-w-xs truncate" title={dem.description || ''}>
-                      {dem.description || 'Aucune description'}
+                    <TableCell className="font-medium">{dem.from || "N/A"}</TableCell>
+                    <TableCell>{dem.date ? new Date(dem.date).toLocaleDateString("fr-FR") : "N/A"}</TableCell>
+                    <TableCell>{getStationName(dem.codeStation) || "N/A"}</TableCell>
+                    <TableCell className="max-w-xs truncate" title={dem.description || ""}>
+                      {dem.description || "Aucune description"}
                     </TableCell>
                     <TableCell>{(dem.total.total || 0).toLocaleString()} €</TableCell>
                     <TableCell>
                       <Badge
                         variant="outline"
-                        className={dem.priority === "HIGH" ? "bg-orange-100 text-orange-800 border-orange-200" : "bg-gray-100 text-gray-800 border-gray-200"}
+                        className={
+                          dem.priority === "HIGH" ? "bg-orange-100 text-orange-800 border-orange-200" : "bg-gray-100 text-gray-800 border-gray-200"
+                        }
                       >
                         {dem.priority === "HIGH" ? "Élevée" : "Faible"}
                       </Badge>
@@ -659,13 +653,13 @@ const DemandesPageContent = () => {
         </Card>
       </div>
     </div>
-  )
-}
+  );
+};
 
 export default function DemandesPage() {
   return (
     <Suspense
-      fallback={(
+      fallback={
         <div className="min-h-screen bg-gray-50 p-6 pt-8">
           <div className="max-w-7xl mx-auto flex items-center justify-center h-64">
             <div className="flex items-center gap-2 text-gray-600">
@@ -674,9 +668,9 @@ export default function DemandesPage() {
             </div>
           </div>
         </div>
-      )}
+      }
     >
       <DemandesPageContent />
     </Suspense>
-  )
+  );
 }

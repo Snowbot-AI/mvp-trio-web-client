@@ -1,14 +1,15 @@
-"use client"
+// app/page.tsx
+"use client";
 
-import { useEffect } from "react"
-import { useRouter } from "next/navigation"
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 export default function Page() {
-  const router = useRouter()
+  const router = useRouter();
 
   useEffect(() => {
-    router.push("/demandes")
-  }, [router])
+    router.push("/demandes");
+  }, [router]);
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -17,5 +18,5 @@ export default function Page() {
         <p className="text-gray-600">Redirection vers les demandes...</p>
       </div>
     </div>
-  )
+  );
 }
