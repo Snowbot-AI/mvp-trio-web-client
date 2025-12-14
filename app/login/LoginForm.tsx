@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import Image from "next/image";
 import { useQueryClient } from "@/app/providers";
+import { Eye, EyeOff } from "lucide-react";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -20,11 +21,12 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-
+    console.log("azul");
     try {
       const response = await fetch("/api/auth/login", {
         method: "POST",
@@ -50,12 +52,19 @@ export default function LoginPage() {
           router.refresh();
         }, 100);
       } else {
+        console.log("Azul2");
         const error = await response.json();
-        toast.error(error.error || "Identifiants invalides");
+        toast.error(error.error || "Identifiants invalides", {
+          duration: 5000,
+          style: { background: "white", color: "#ef4444", border: "1px solid #ef4444" },
+        });
       }
     } catch (error) {
       console.error("Login error:", error);
-      toast.error("Erreur lors de la connexion");
+      toast.error("Erreur lors de la connexion", {
+        duration: 5000,
+        style: { background: "white", color: "#ef4444", border: "1px solid #ef4444" },
+      });
     } finally {
       setIsLoading(false);
     }
@@ -91,16 +100,27 @@ export default function LoginPage() {
 
             <div className="space-y-2">
               <Label htmlFor="password">Mot de passe</Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                autoComplete="current-password"
-                disabled={isLoading}
-              />
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  autoComplete="current-password"
+                  disabled={isLoading}
+                  className="pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((v) => !v)}
+                  className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500"
+                  tabIndex={-1}
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
             </div>
 
             <Button type="submit" className="w-full" disabled={isLoading}>
