@@ -309,6 +309,7 @@ export function ActionButtons({
           demande.status !== PurchaseRequestStatus.VALIDEE &&
           demande.status !== PurchaseRequestStatus.REJETEE &&
           demande.status !== PurchaseRequestStatus.EXPORTEE &&
+          demande.status !== PurchaseRequestStatus.SUIVI_COMPTA &&
           currentUserRole !== "VALIDEUR" && (
             <Button onClick={onEdit}>
               <Edit className="h-4 w-4 mr-2" />
@@ -317,7 +318,7 @@ export function ActionButtons({
           )}
 
         {/* Boutons d'export - visibles en SUIVI_COMPTA et REJETEE */}
-        {(demande.status === PurchaseRequestStatus.SUIVI_COMPTA || demande.status === PurchaseRequestStatus.REJETEE) && (
+        {demande.status === PurchaseRequestStatus.SUIVI_COMPTA && (
           <>
             <Button variant="outline" onClick={onExport}>
               <Download className="h-4 w-4 mr-2" />
@@ -405,6 +406,7 @@ export function ActionButtons({
           demande.status !== PurchaseRequestStatus.VALIDEE &&
           demande.status !== PurchaseRequestStatus.REJETEE &&
           demande.status !== PurchaseRequestStatus.EXPORTEE &&
+          demande.status !== PurchaseRequestStatus.SUIVI_COMPTA &&
           currentUserRole !== "VALIDEUR" && (
             <Button onClick={onEdit}>
               <Edit className="h-4 w-4 mr-2" />
@@ -453,7 +455,7 @@ export function ActionButtons({
               </>
             )}
 
-            {(demande.status === PurchaseRequestStatus.SUIVI_COMPTA || demande.status === PurchaseRequestStatus.REJETEE) && (
+            {demande.status === PurchaseRequestStatus.SUIVI_COMPTA && (
               <>
                 <DropdownMenuItem onSelect={onExport}>
                   <span className="flex items-center gap-2">

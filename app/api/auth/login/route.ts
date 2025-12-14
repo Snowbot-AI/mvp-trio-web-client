@@ -23,6 +23,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     });
 
     if (upstream.status !== 200) {
+      console.log("[api/auth/login/", "Erreur login");
       return NextResponse.json({ error: "Identifiants invalides" }, { status: upstream.status });
     }
 
