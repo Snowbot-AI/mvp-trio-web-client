@@ -73,6 +73,7 @@ const createFormDataFromJson = (jsonData: DemandeFormData, files?: File[]): Form
 // Fonctions API utilisant la configuration
 const fetchDemandes = async (): Promise<DemandeFormData[]> => {
   const url = buildApiUrl(API_CONFIG.endpoints.demandes);
+  console.log(url);
   const response = await fetch(url, {
     headers: createHeaders(),
   });
@@ -316,3 +317,78 @@ export const useDeleteDemande = () => {
     },
   });
 };
+
+export type CommentUser = {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  role: string;
+};
+
+export type CommentDTO = {
+  id: string;
+  content: string;
+  createdAt: string;
+  user: CommentUser;
+};
+
+// Hook pour récupérer les commentaires
+export function useComments(demandeId: string) {
+  return useQuery<CommentDTO[]>({
+    queryKey: ["comments", demandeId],
+    queryFn: async () => {
+      const response = await fetch(`/api/demandes/${demandeId}/comments`, {
+        credentials: "include",
+      });
+      if (!response.ok) {
+        throw new ApiError("Erreur lors de la récupération des commentaires", response.status);
+      }
+      return response.json();
+    },
+    enabled: !!demandeId,
+  });
+}
+
+// Hook pour ajouter un commentaire (mis à jour pour retourner CommentDTO)
+export function useAddComment() {
+  const queryClient = useQueryClient();
+
+  return useMutation<CommentDTO, ApiError, { demandeId: string; content: string }>({
+    mutationFn: async ({ demandeId, content }) => {
+      const response = await fetch(`/api/demandes/${demandeId}/comments`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ content }),
+      });
+      if (!response.ok) {
+        throw new ApiError("Erreur lors de l'ajout du commentaire", response.status);
+      }
+      return response.json();
+    },
+    onSuccess: (_, variables) => {
+      // Invalider le cache pour recharger les commentaires
+      queryClient.invalidateQueries({ queryKey: ["comments", variables.demandeId] });
+    },
+  });
+}
+
+export function useDeleteComment() {
+  const queryClient = useQueryClient();
+
+  return useMutation<void, ApiError, { demandeId: string; commentId: string }>({
+    mutationFn: async ({ demandeId, commentId }) => {
+      const response = await fetch(`/api/demandes/${demandeId}/comments/${commentId}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      if (!response.ok) {
+        throw new ApiError("Erreur lors de la suppression du commentaire", response.status);
+      }
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["comments", variables.demandeId] });
+    },
+  });
+}
