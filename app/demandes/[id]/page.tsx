@@ -15,6 +15,7 @@ import { useDemande, useUpdateDemandeWithJsonFile, useDeleteDemande, ApiError } 
 import { buildApiUrl, API_CONFIG } from "@/lib/api-config";
 import { DemandeSchema, type DemandeFormData } from "../validation-schema";
 import { translateFieldPath } from "../utils";
+// import { CommentsSection } from "./components/CommentsSection";
 
 type FileType = {
   id?: string;
@@ -46,6 +47,7 @@ import { SupplierInfoCard } from "./components/SupplierInfoCard";
 import { BillingInfoCard } from "./components/BillingInfoCard";
 import { DeliveryInfoCard } from "./components/DeliveryInfoCard";
 import { useCurrentUser } from "../useCurrentUser";
+import { CommentsWrapper } from "./components/CommentsWrapper";
 
 export default function DetailDemande() {
   const router = useRouter();
@@ -942,7 +944,7 @@ export default function DetailDemande() {
           />
 
           {/* 5ème partie : Commentaires */}
-          <div className="bg-white rounded-lg shadow p-6 mb-8">
+          {/* <div className="bg-white rounded-lg shadow p-6 mb-8">
             <h3 className="text-lg font-semibold mb-4">Commentaire</h3>
             {modeEdition ? (
               <div className="space-y-2">
@@ -956,7 +958,10 @@ export default function DetailDemande() {
             ) : (
               <p className="text-sm text-gray-600">{demande.comment || "Aucun commentaire"}</p>
             )}
-          </div>
+          </div> */}
+
+          {/* <CommentsSection demandeId={params.id} comments={demande.comments || []} currentUser={currentUser} /> */}
+          <CommentsWrapper demandeId={params.id} currentUser={currentUser} />
 
           {/* 6ème partie : Zone dangereuse - suppression de la demande */}
           <div className="bg-white rounded-lg shadow p-6 mb-8">
