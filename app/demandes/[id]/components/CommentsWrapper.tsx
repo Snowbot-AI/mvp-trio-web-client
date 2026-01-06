@@ -5,7 +5,7 @@ import React, { useState } from "react";
 import { CommentsSection } from "./CommentsSection";
 import { CommentsSectionPro } from "./CommentsSectionPro";
 import { User } from "../../useCurrentUser";
-import { MessageCircle, LayoutList } from "lucide-react";
+import { LayoutList } from "lucide-react";
 
 type CommentsWrapperProps = {
   demandeId: string;
@@ -28,14 +28,14 @@ export function CommentsWrapper({ demandeId, currentUser }: CommentsWrapperProps
             <LayoutList className="h-4 w-4" />
             Timeline
           </button>
-          <button
+          {/* <button
             onClick={() => setViewMode("chat")}
             className={`flex items-center gap-2 px-3 py-1.5 text-sm rounded-md transition-all
                       ${viewMode === "chat" ? "bg-white shadow text-gray-900" : "text-gray-500 hover:text-gray-700"}`}
           >
             <MessageCircle className="h-4 w-4" />
             Messages
-          </button>
+          </button> */}
         </div>
       </div>
 
